@@ -182,6 +182,13 @@ const T = {
     calcSubtotal:    "Subtotal (u)",
     calcPct:         "% by mass",
     calcError:       "Invalid formula",
+    compareTitle:  "Compare Elements",
+    compareSelect: "Select an element…",
+    compareSwap:   "↔ Swap",
+    compareClear:  "Clear",
+    compareHigher: "Higher",
+    compareLower:  "Lower",
+    compareNA:     "N/A",
   },
   es: {
     title: "Tabla Periódica Interactiva",
@@ -218,8 +225,26 @@ const T = {
     calcSubtotal:    "Subtotal (u)",
     calcPct:         "% en masa",
     calcError:       "Fórmula inválida",
+    compareTitle:  "Comparar Elementos",
+    compareSelect: "Seleccionar elemento…",
+    compareSwap:   "↔ Intercambiar",
+    compareClear:  "Limpiar",
+    compareHigher: "Mayor",
+    compareLower:  "Menor",
+    compareNA:     "N/D",
   }
 };
+
+function searchElements(query) {
+  if (!query.trim()) return [];
+  const q = query.toLowerCase();
+  return ELEMENTS.filter(e =>
+    e.s.toLowerCase().startsWith(q) ||
+    e.name.es.toLowerCase().includes(q) ||
+    e.name.en.toLowerCase().includes(q) ||
+    String(e.n) === q
+  ).slice(0, 8);
+}
 
 export default function PeriodicTable() {
   const [selected, setSelected] = useState(null);
@@ -230,6 +255,10 @@ export default function PeriodicTable() {
   const [lang, setLang] = useState("es");
   const [activeTab, setActiveTab] = useState("table"); // "table"|"calculator"|"compare"|"quiz"
   const [formula, setFormula] = useState("");
+  const [compareA, setCompareA] = useState(null);
+  const [compareB, setCompareB] = useState(null);
+  const [compareSearchA, setCompareSearchA] = useState("");
+  const [compareSearchB, setCompareSearchB] = useState("");
 
   const t = T[lang];
 
@@ -667,8 +696,64 @@ export default function PeriodicTable() {
         )}
 
         {activeTab === "compare" && (
-          <div style={{ color: "#94a3b8", padding: "40px", textAlign: "center" }}>
-            Comparar — próximamente
+          <div>
+            <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#f1f5f9", marginBottom: "20px" }}>
+              {t.compareTitle}
+            </h2>
+
+            {/* Selectores */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: "12px", alignItems: "start", marginBottom: "24px" }}>
+              <ElementPicker
+                label="A"
+                value={compareA}
+                search={compareSearchA}
+                onSearch={setCompareSearchA}
+                onSelect={el => { setCompareA(el); setCompareSearchA(""); }}
+                onClear={() => setCompareA(null)}
+                lang={lang}
+                t={t}
+              />
+
+              <button
+                onClick={() => { const tmp = compareA; setCompareA(compareB); setCompareB(tmp); }}
+                disabled={!compareA || !compareB}
+                style={{
+                  marginTop: "28px",
+                  padding: "8px 12px",
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  borderRadius: "8px",
+                  color: compareA && compareB ? "#e2e8f0" : "#4b5563",
+                  cursor: compareA && compareB ? "pointer" : "default",
+                  fontFamily: "inherit",
+                  fontSize: "13px",
+                }}
+              >
+                {t.compareSwap}
+              </button>
+
+              <ElementPicker
+                label="B"
+                value={compareB}
+                search={compareSearchB}
+                onSearch={setCompareSearchB}
+                onSelect={el => { setCompareB(el); setCompareSearchB(""); }}
+                onClear={() => setCompareB(null)}
+                lang={lang}
+                t={t}
+              />
+            </div>
+
+            {/* Tabla comparativa */}
+            {compareA && compareB && (
+              <CompareTable a={compareA} b={compareB} lang={lang} t={t} />
+            )}
+
+            {(!compareA || !compareB) && (
+              <div style={{ textAlign: "center", color: "#64748b", padding: "40px" }}>
+                {t.compareSelect}
+              </div>
+            )}
           </div>
         )}
 
@@ -688,6 +773,115 @@ function Stat({ label, value }) {
     <div style={{ background: "rgba(0,0,0,0.2)", padding: "8px 10px", borderRadius: "6px" }}>
       <div style={{ fontSize: "10px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "2px" }}>{label}</div>
       <div style={{ color: "#f1f5f9", fontWeight: "500" }}>{value}</div>
+    </div>
+  );
+}
+
+function ElementPicker({ label, value, search, onSearch, onSelect, onClear, lang, t }) {
+  const results = searchElements(search);
+  return (
+    <div>
+      <div style={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>
+        {lang === "es" ? `Elemento ${label}` : `Element ${label}`}
+      </div>
+      {value ? (
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", background: `${CATEGORIES[value.cat].bg}`, border: `1px solid ${CATEGORIES[value.cat].border}`, borderRadius: "8px" }}>
+          <span style={{ fontSize: "24px", fontWeight: "700", color: "#fff" }}>{value.s}</span>
+          <span style={{ color: "#cbd5e1" }}>{value.name[lang]}</span>
+          <button onClick={onClear} style={{ marginLeft: "auto", background: "none", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: "16px" }}>×</button>
+        </div>
+      ) : (
+        <div style={{ position: "relative" }}>
+          <input
+            type="text"
+            placeholder={t.compareSelect}
+            value={search}
+            onChange={e => onSearch(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "10px 14px",
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.12)",
+              borderRadius: "8px",
+              color: "#f1f5f9",
+              fontSize: "14px",
+              fontFamily: "inherit",
+              outline: "none",
+              boxSizing: "border-box",
+            }}
+          />
+          {results.length > 0 && (
+            <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#1e293b", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "8px", marginTop: "4px", zIndex: 10, overflow: "hidden" }}>
+              {results.map(el => (
+                <button
+                  key={el.n}
+                  onClick={() => onSelect(el)}
+                  style={{ display: "flex", alignItems: "center", gap: "10px", width: "100%", padding: "8px 14px", background: "none", border: "none", color: "#f1f5f9", cursor: "pointer", fontFamily: "inherit", textAlign: "left" }}
+                  onMouseOver={e => e.currentTarget.style.background = "rgba(255,255,255,0.06)"}
+                  onMouseOut={e => e.currentTarget.style.background = "none"}
+                >
+                  <span style={{ fontSize: "18px", fontWeight: "700", minWidth: "28px", color: CATEGORIES[el.cat].color }}>{el.s}</span>
+                  <span style={{ fontSize: "13px" }}>{el.name[lang]}</span>
+                  <span style={{ marginLeft: "auto", fontSize: "11px", color: "#64748b" }}>#{el.n}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CompareTable({ a, b, lang, t }) {
+  const rows = [
+    { label: lang === "es" ? "Número atómico" : "Atomic number",         va: a.n,           vb: b.n,           numeric: true },
+    { label: lang === "es" ? "Masa atómica (u)" : "Atomic mass (u)",     va: a.mass,        vb: b.mass,        numeric: true },
+    { label: lang === "es" ? "Categoría" : "Category",                   va: CATEGORIES[a.cat].label[lang], vb: CATEGORIES[b.cat].label[lang], numeric: false },
+    { label: lang === "es" ? "Fase (STP)" : "Phase (STP)",               va: a.phase[lang], vb: b.phase[lang], numeric: false },
+    { label: lang === "es" ? "Config. electrónica" : "Electron config.",  va: a.config,      vb: b.config,      numeric: false },
+    { label: lang === "es" ? "Electronegatividad" : "Electronegativity",  va: a.electroneg,  vb: b.electroneg,  numeric: true },
+    { label: lang === "es" ? "Radio atómico (pm)" : "Atomic radius (pm)", va: a.radius,      vb: b.radius,      numeric: true },
+    { label: lang === "es" ? "E. ionización (kJ/mol)" : "Ioniz. energy (kJ/mol)", va: a.ionization, vb: b.ionization, numeric: true },
+    { label: lang === "es" ? "Fusión (°C)" : "Melting (°C)",              va: a.melt,        vb: b.melt,        numeric: true },
+    { label: lang === "es" ? "Ebullición (°C)" : "Boiling (°C)",          va: a.boil,        vb: b.boil,        numeric: true },
+    { label: lang === "es" ? "Estados de oxidación" : "Oxidation states",  va: a.oxidation ? a.oxidation.join(", ") : "—", vb: b.oxidation ? b.oxidation.join(", ") : "—", numeric: false },
+    { label: lang === "es" ? "Descubierto" : "Discovered",                va: a.discovered,  vb: b.discovered,  numeric: false },
+  ];
+
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+        <thead>
+          <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+            <th style={{ padding: "10px 14px", textAlign: "left", color: "#94a3b8", width: "35%" }}>
+              {lang === "es" ? "Propiedad" : "Property"}
+            </th>
+            {[a, b].map(el => (
+              <th key={el.n} style={{ padding: "10px 14px", textAlign: "center", color: CATEGORIES[el.cat].color }}>
+                {el.s} — {el.name[lang]}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => {
+            const aNum = parseFloat(row.va);
+            const bNum = parseFloat(row.vb);
+            const aHigher = row.numeric && !isNaN(aNum) && !isNaN(bNum) && aNum > bNum;
+            const bHigher = row.numeric && !isNaN(aNum) && !isNaN(bNum) && bNum > aNum;
+            const highlight = (higher) => higher ? { color: "#86efac", fontWeight: "600" } : { color: "#94a3b8" };
+            const na = (v) => (v === null || v === undefined) ? "—" : v;
+            return (
+              <tr key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                <td style={{ padding: "10px 14px", color: "#94a3b8" }}>{row.label}</td>
+                <td style={{ padding: "10px 14px", textAlign: "center", ...highlight(aHigher) }}>{na(row.va)}</td>
+                <td style={{ padding: "10px 14px", textAlign: "center", ...highlight(bHigher) }}>{na(row.vb)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
