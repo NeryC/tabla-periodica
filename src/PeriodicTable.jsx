@@ -298,7 +298,7 @@ export default function PeriodicTable() {
           ))}
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(18, minmax(0, 1fr))", gap: "3px", marginBottom: "8px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(18, minmax(0, 1fr))", gridTemplateRows: "repeat(10, auto)", gap: "3px", marginBottom: "8px" }}>
           {ELEMENTS.map(el => {
             const cat = CATEGORIES[el.cat];
             const isMatch = !matches || matches.has(el.n);
@@ -326,14 +326,12 @@ export default function PeriodicTable() {
                   gap: "1px",
                   fontFamily: "inherit",
                   transition: "transform 0.1s, box-shadow 0.1s, background 0.15s",
-                  transform: isSelected ? "scale(1.1)" : "scale(1)",
+                  transform: isSelected ? "scale(1.1)" : (hovered?.n === el.n && isMatch) ? "scale(1.08)" : "scale(1)",
                   boxShadow: isSelected ? `0 0 16px ${cat.color}` : "none",
                   opacity: isMatch ? 1 : 0.3,
                   position: "relative",
                   zIndex: isSelected ? 5 : 1
                 }}
-                onMouseOver={e => { if (isMatch && !isSelected) e.currentTarget.style.transform = "scale(1.08)"; }}
-                onMouseOut={e => { if (!isSelected) e.currentTarget.style.transform = "scale(1)"; }}
               >
                 <div style={{ fontSize: "8px", opacity: 0.7, lineHeight: 1 }}>{el.n}</div>
                 <div style={{ fontSize: "16px", fontWeight: "700", lineHeight: 1 }}>{el.s}</div>
