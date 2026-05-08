@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { heatColor } from './utils.js';
 
 const ELEMENTS = [
   { n: 1, s: "H", name: { en: "Hydrogen", es: "Hidrógeno" }, mass: 1.008, cat: "nonmetal", row: 1, col: 1, config: "1s¹", phase: { en: "Gas", es: "Gas" }, melt: -259.16, boil: -252.87, discovered: 1766, discoverer: "Henry Cavendish", electroneg: 2.2, radius: 53, ionization: 1312, oxidation: ["+1","-1"], desc: { en: "The lightest and most abundant element in the universe. Forms water with oxygen.", es: "El elemento más ligero y abundante del universo. Forma agua con el oxígeno." } },
@@ -205,6 +206,7 @@ export default function PeriodicTable() {
   const [hovered, setHovered] = useState(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState(null);
+  const [propertyMode, setPropertyMode] = useState("category");
   const [lang, setLang] = useState("es");
   const [activeTab, setActiveTab] = useState("table"); // "table"|"calculator"|"compare"|"quiz"
 
@@ -225,6 +227,13 @@ export default function PeriodicTable() {
     });
     return set;
   }, [search, filter]);
+
+  const heatRange = useMemo(() => {
+    const mode = PROPERTY_MODES[propertyMode];
+    if (!mode.prop) return null;
+    const values = ELEMENTS.map(e => e[mode.prop]).filter(v => v !== null && v !== undefined);
+    return { min: Math.min(...values), max: Math.max(...values) };
+  }, [propertyMode]);
 
   const display = hovered || selected;
 
@@ -360,11 +369,60 @@ export default function PeriodicTable() {
           ))}
         </div>
 
+        {/* Selector de mapa de calor */}
+        <div style={{ display: "flex", gap: "8px", marginBottom: "12px", alignItems: "center", flexWrap: "wrap" }}>
+          <span style={{ fontSize: "12px", color: "#94a3b8" }}>{t.visualize}:</span>
+          {Object.entries(PROPERTY_MODES).map(([key, mode]) => (
+            <button
+              key={key}
+              onClick={() => setPropertyMode(key)}
+              style={{
+                padding: "4px 10px",
+                fontSize: "12px",
+                background: propertyMode === key ? "rgba(96,165,250,0.25)" : "rgba(255,255,255,0.05)",
+                border: `1px solid ${propertyMode === key ? "rgba(96,165,250,0.5)" : "rgba(255,255,255,0.1)"}`,
+                borderRadius: "6px",
+                color: propertyMode === key ? "#93c5fd" : "#94a3b8",
+                cursor: "pointer",
+                fontFamily: "inherit",
+                transition: "all 0.15s",
+              }}
+            >
+              {mode.label[lang]}
+              {mode.unit && <span style={{ opacity: 0.6, marginLeft: "4px" }}>({mode.unit})</span>}
+            </button>
+          ))}
+        </div>
+
+        {/* Leyenda del mapa de calor */}
+        {heatRange && propertyMode !== "category" && (
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px", fontSize: "11px", color: "#94a3b8" }}>
+            <span>{heatRange.min}</span>
+            <div style={{
+              flex: 1,
+              maxWidth: "200px",
+              height: "8px",
+              borderRadius: "4px",
+              background: "linear-gradient(to right, rgb(59,130,246), rgb(245,158,11), rgb(239,68,68))",
+            }} />
+            <span>{heatRange.max} {PROPERTY_MODES[propertyMode].unit}</span>
+          </div>
+        )}
+
         <div style={{ display: "grid", gridTemplateColumns: "repeat(18, minmax(0, 1fr))", gridTemplateRows: "repeat(10, auto)", gap: "3px", marginBottom: "8px" }}>
           {ELEMENTS.map(el => {
-            const cat = CATEGORIES[el.cat];
             const isMatch = !matches || matches.has(el.n);
             const isSelected = selected?.n === el.n;
+
+            const heat = propertyMode !== "category" && heatRange
+              ? heatColor(el[PROPERTY_MODES[propertyMode].prop], heatRange.min, heatRange.max)
+              : null;
+
+            const cat = CATEGORIES[el.cat];
+            const elBg     = heat ? heat.bg     : (isMatch ? cat.bg     : "rgba(255,255,255,0.02)");
+            const elBorder = heat ? (isMatch ? heat.border : "rgba(255,255,255,0.05)") : (isSelected ? cat.color : (isMatch ? cat.border : "rgba(255,255,255,0.05)"));
+            const elColor  = heat ? heat.color  : (isMatch ? "#fff" : "#52525b");
+
             return (
               <button
                 key={el.n}
@@ -375,11 +433,11 @@ export default function PeriodicTable() {
                   gridColumn: el.col,
                   gridRow: el.row,
                   aspectRatio: "1",
-                  background: isMatch ? cat.bg : "rgba(255,255,255,0.02)",
-                  border: `1px solid ${isSelected ? cat.color : isMatch ? cat.border : "rgba(255,255,255,0.05)"}`,
+                  background: elBg,
+                  border: `1px solid ${elBorder}`,
                   borderRadius: "4px",
                   padding: "2px",
-                  color: isMatch ? "#fff" : "#52525b",
+                  color: elColor,
                   cursor: "pointer",
                   display: "flex",
                   flexDirection: "column",
