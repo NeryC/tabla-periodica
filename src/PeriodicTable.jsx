@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { heatColor, parseFormula, normalizeText } from './utils.js';
 
 const ELEMENTS = [
@@ -327,6 +327,12 @@ export default function PeriodicTable() {
   const [quizStreak, setQuizStreak]   = useState(0);
   const [quizScore, setQuizScore]     = useState(0);
   const [quizSeen, setQuizSeen]       = useState(new Set());
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
 
   const t = T[lang];
 
@@ -376,11 +382,11 @@ export default function PeriodicTable() {
   const display = hovered || selected;
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0a0e1a 0%, #1a1033 100%)", padding: "24px", fontFamily: "ui-sans-serif, system-ui, -apple-system, sans-serif", color: "#e4e4e7" }}>
+    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0a0e1a 0%, #1a1033 100%)", padding: isMobile ? "12px 8px" : "24px", fontFamily: "ui-sans-serif, system-ui, -apple-system, sans-serif", color: "#e4e4e7" }}>
       <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
         <header style={{ marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "12px" }}>
           <div>
-            <h1 style={{ fontSize: "32px", fontWeight: "700", margin: "0 0 6px 0", background: "linear-gradient(90deg, #60a5fa, #c084fc, #f472b6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+            <h1 style={{ fontSize: isMobile ? "22px" : "32px", fontWeight: "700", margin: "0 0 6px 0", background: "linear-gradient(90deg, #60a5fa, #c084fc, #f472b6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
               {t.title}
             </h1>
             <p style={{ margin: 0, color: "#94a3b8", fontSize: "14px" }}>
@@ -424,12 +430,12 @@ export default function PeriodicTable() {
               onClick={() => setActiveTab(tab.id)}
               style={{
                 flex: 1,
-                padding: "8px 12px",
+                padding: isMobile ? "6px 4px" : "8px 12px",
                 background: activeTab === tab.id ? "rgba(96,165,250,0.2)" : "transparent",
                 border: activeTab === tab.id ? "1px solid rgba(96,165,250,0.4)" : "1px solid transparent",
                 borderRadius: "7px",
                 color: activeTab === tab.id ? "#fff" : "#94a3b8",
-                fontSize: "13px",
+                fontSize: isMobile ? "11px" : "13px",
                 fontWeight: activeTab === tab.id ? "600" : "400",
                 cursor: "pointer",
                 fontFamily: "inherit",
@@ -457,8 +463,8 @@ export default function PeriodicTable() {
               color: "#e4e4e7",
               fontSize: "14px",
               outline: "none",
-              minWidth: "260px",
-              flex: "0 1 320px",
+              minWidth: isMobile ? "0" : "260px",
+              flex: isMobile ? "1 1 100%" : "0 1 320px",
               fontFamily: "inherit"
             }}
           />
@@ -547,7 +553,8 @@ export default function PeriodicTable() {
           </div>
         )}
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(18, minmax(0, 1fr))", gridTemplateRows: "repeat(10, auto)", gap: "3px", marginBottom: "8px" }}>
+        <div className="pt-scroll" style={{ overflowX: "auto", WebkitOverflowScrolling: "touch", marginBottom: "8px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(18, minmax(0, 1fr))", gridTemplateRows: "repeat(10, auto)", gap: "3px", minWidth: isMobile ? "560px" : undefined }}>
           {ELEMENTS.map(el => {
             const isMatch = !matches || matches.has(el.n);
             const isSelected = selected?.n === el.n;
@@ -601,6 +608,7 @@ export default function PeriodicTable() {
           <div style={{ gridColumn: "3", gridRow: "9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", color: "#71717a" }}>57-71</div>
           <div style={{ gridColumn: "3", gridRow: "10", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", color: "#71717a" }}>89-103</div>
         </div>
+        </div>
 
         <div style={{
           marginTop: "24px",
@@ -612,10 +620,11 @@ export default function PeriodicTable() {
           transition: "all 0.2s"
         }}>
           {display ? (
-            <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "24px", alignItems: "start" }}>
+            <div style={{ display: isMobile ? "flex" : "grid", flexDirection: "column", gridTemplateColumns: "auto 1fr", gap: isMobile ? "12px" : "24px", alignItems: "start" }}>
               <div style={{
-                width: "120px",
-                height: "120px",
+                width: isMobile ? "80px" : "120px",
+                height: isMobile ? "80px" : "120px",
+                alignSelf: isMobile ? "center" : undefined,
                 background: CATEGORIES[display.cat].bg,
                 border: `2px solid ${CATEGORIES[display.cat].color}`,
                 borderRadius: "10px",
@@ -627,7 +636,7 @@ export default function PeriodicTable() {
                 flexShrink: 0
               }}>
                 <div style={{ fontSize: "12px", opacity: 0.8 }}>{display.n}</div>
-                <div style={{ fontSize: "44px", fontWeight: "700", lineHeight: 1 }}>{display.s}</div>
+                <div style={{ fontSize: isMobile ? "28px" : "44px", fontWeight: "700", lineHeight: 1 }}>{display.s}</div>
                 <div style={{ fontSize: "11px", opacity: 0.8 }}>{display.mass}</div>
               </div>
               <div>
@@ -671,9 +680,9 @@ export default function PeriodicTable() {
                             borderRadius: "10px",
                             fontSize: "12px",
                             fontWeight: "600",
-                            background: ox.startsWith("+") ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)",
-                            border: `1px solid ${ox.startsWith("+") ? "rgba(34,197,94,0.4)" : "rgba(239,68,68,0.4)"}`,
-                            color: ox.startsWith("+") ? "#86efac" : "#fca5a5",
+                            background: ox.startsWith("+") ? "rgba(34,197,94,0.15)" : ox.startsWith("-") ? "rgba(239,68,68,0.15)" : "rgba(148,163,184,0.1)",
+                            border: `1px solid ${ox.startsWith("+") ? "rgba(34,197,94,0.4)" : ox.startsWith("-") ? "rgba(239,68,68,0.4)" : "rgba(148,163,184,0.3)"}`,
+                            color: ox.startsWith("+") ? "#86efac" : ox.startsWith("-") ? "#fca5a5" : "#94a3b8",
                           }}
                         >
                           {ox}
@@ -770,7 +779,7 @@ export default function PeriodicTable() {
             </h2>
 
             {/* Selectores */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: "12px", alignItems: "start", marginBottom: "24px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr auto 1fr", gap: "12px", alignItems: "start", marginBottom: "24px" }}>
               <ElementPicker
                 label="A"
                 value={compareA}
@@ -786,7 +795,7 @@ export default function PeriodicTable() {
                 onClick={() => { const tmp = compareA; setCompareA(compareB); setCompareB(tmp); }}
                 disabled={!compareA || !compareB}
                 style={{
-                  marginTop: "28px",
+                  marginTop: isMobile ? "0" : "28px",
                   padding: "8px 12px",
                   background: "rgba(255,255,255,0.06)",
                   border: "1px solid rgba(255,255,255,0.15)",
