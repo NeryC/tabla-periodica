@@ -515,7 +515,35 @@ export default function PeriodicTable() {
                   <Stat label={t.config} value={display.config} />
                   <Stat label={t.discovered} value={display.discovered < 0 ? `~${Math.abs(display.discovered)} ${t.bce}` : display.discovered} />
                   <Stat label={t.discoverer} value={display.discoverer} />
+                  <Stat label={t.electroneg} value={display.electroneg !== null && display.electroneg !== undefined ? `${display.electroneg} (Pauling)` : (t.noData ?? "—")} />
+                  <Stat label={t.radius}     value={display.radius     !== null && display.radius !== undefined     ? `${display.radius} pm`            : (t.noData ?? "—")} />
+                  <Stat label={t.ionization} value={display.ionization !== null && display.ionization !== undefined ? `${display.ionization} kJ/mol`    : (t.noData ?? "—")} />
                 </div>
+                {display.oxidation && (
+                  <div style={{ marginTop: "10px" }}>
+                    <div style={{ fontSize: "10px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>
+                      {t.oxidation}
+                    </div>
+                    <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                      {display.oxidation.map(ox => (
+                        <span
+                          key={ox}
+                          style={{
+                            padding: "2px 8px",
+                            borderRadius: "10px",
+                            fontSize: "12px",
+                            fontWeight: "600",
+                            background: ox.startsWith("+") ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)",
+                            border: `1px solid ${ox.startsWith("+") ? "rgba(34,197,94,0.4)" : "rgba(239,68,68,0.4)"}`,
+                            color: ox.startsWith("+") ? "#86efac" : "#fca5a5",
+                          }}
+                        >
+                          {ox}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ) : (
