@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { heatColor, parseFormula } from './utils.js';
+import { heatColor, parseFormula, normalizeText } from './utils.js';
 
 const ELEMENTS = [
   { n: 1, s: "H", name: { en: "Hydrogen", es: "Hidrógeno" }, mass: 1.008, cat: "nonmetal", row: 1, col: 1, config: "1s¹", phase: { en: "Gas", es: "Gas" }, melt: -259.16, boil: -252.87, discovered: 1766, discoverer: "Henry Cavendish", electroneg: 2.2, radius: 53, ionization: 1312, oxidation: ["+1","-1"], desc: { en: "The lightest and most abundant element in the universe. Forms water with oxygen.", es: "El elemento más ligero y abundante del universo. Forma agua con el oxígeno." } },
@@ -189,6 +189,19 @@ const T = {
     compareHigher: "Higher",
     compareLower:  "Lower",
     compareNA:     "N/A",
+    quizTitle:   "Study Quiz",
+    quizMode1:   "Symbol → Name",
+    quizMode2:   "Name → Symbol",
+    quizMode3:   "Property → Element",
+    quizAnswer:  "Your answer…",
+    quizCheck:   "Check",
+    quizNext:    "Next →",
+    quizStreak:  "Streak",
+    quizScore:   "Score",
+    quizCorrect: "Correct!",
+    quizWrong:   "Wrong. Answer:",
+    quizGuess:   "Identify this element:",
+    quizHint:    "Hint",
   },
   es: {
     title: "Tabla Periódica Interactiva",
@@ -232,8 +245,56 @@ const T = {
     compareHigher: "Mayor",
     compareLower:  "Menor",
     compareNA:     "N/D",
+    quizTitle:   "Quiz de Estudio",
+    quizMode1:   "Símbolo → Nombre",
+    quizMode2:   "Nombre → Símbolo",
+    quizMode3:   "Propiedad → Elemento",
+    quizAnswer:  "Tu respuesta…",
+    quizCheck:   "Verificar",
+    quizNext:    "Siguiente →",
+    quizStreak:  "Racha",
+    quizScore:   "Puntuación",
+    quizCorrect: "¡Correcto!",
+    quizWrong:   "Incorrecto. Respuesta:",
+    quizGuess:   "Identifica este elemento:",
+    quizHint:    "Pista",
   }
 };
+
+function pickRandom(seen, total) {
+  const remaining = Array.from({ length: total }, (_, i) => i + 1).filter(n => !seen.has(n));
+  if (remaining.length === 0) return null;
+  return ELEMENTS.find(e => e.n === remaining[Math.floor(Math.random() * remaining.length)]);
+}
+
+function checkQuizAnswer(mode, current, answer, lang) {
+  const norm = normalizeText(answer);
+  if (norm === "") return false;
+  if (mode === "symbolToName") {
+    return norm === normalizeText(current.name.es) || norm === normalizeText(current.name.en);
+  }
+  if (mode === "nameToSymbol") {
+    return norm === normalizeText(current.s);
+  }
+  if (mode === "propertyToElement") {
+    return norm === normalizeText(current.s) || norm === normalizeText(current.name[lang]) || norm === normalizeText(current.name[lang === "es" ? "en" : "es"]);
+  }
+  return false;
+}
+
+function buildQuizQuestion(mode, element, lang) {
+  if (mode === "symbolToName") return element.s;
+  if (mode === "nameToSymbol") return element.name[lang];
+  if (mode === "propertyToElement") {
+    const hints = [];
+    if (element.electroneg !== null) hints.push(`EN: ${element.electroneg}`);
+    hints.push(element.phase[lang]);
+    hints.push(CATEGORIES[element.cat].label[lang]);
+    if (element.melt !== null) hints.push(`${lang === "es" ? "Fusión" : "Melting"}: ${element.melt}°C`);
+    return hints.join(" · ");
+  }
+  return "";
+}
 
 function searchElements(query) {
   if (!query.trim()) return [];
@@ -259,6 +320,13 @@ export default function PeriodicTable() {
   const [compareB, setCompareB] = useState(null);
   const [compareSearchA, setCompareSearchA] = useState("");
   const [compareSearchB, setCompareSearchB] = useState("");
+  const [quizMode, setQuizMode]       = useState("symbolToName");
+  const [quizCurrent, setQuizCurrent] = useState(null);
+  const [quizAnswer, setQuizAnswer]   = useState("");
+  const [quizResult, setQuizResult]   = useState("idle");
+  const [quizStreak, setQuizStreak]   = useState(0);
+  const [quizScore, setQuizScore]     = useState(0);
+  const [quizSeen, setQuizSeen]       = useState(new Set());
 
   const t = T[lang];
 
@@ -757,11 +825,162 @@ export default function PeriodicTable() {
           </div>
         )}
 
-        {activeTab === "quiz" && (
-          <div style={{ color: "#94a3b8", padding: "40px", textAlign: "center" }}>
-            Quiz — próximamente
-          </div>
-        )}
+        {activeTab === "quiz" && (() => {
+          const startQuiz = () => {
+            const el = pickRandom(quizSeen, 118);
+            if (el) { setQuizCurrent(el); setQuizAnswer(""); setQuizResult("idle"); }
+            else { const empty = new Set(); setQuizSeen(empty); const el2 = pickRandom(empty, 118); setQuizCurrent(el2); setQuizAnswer(""); setQuizResult("idle"); }
+          };
+
+          const handleCheck = () => {
+            if (!quizCurrent || quizResult !== "idle") return;
+            const correct = checkQuizAnswer(quizMode, quizCurrent, quizAnswer, lang);
+            setQuizResult(correct ? "correct" : "wrong");
+            if (correct) { setQuizStreak(s => s + 1); setQuizScore(s => s + 1); setQuizSeen(s => new Set([...s, quizCurrent.n])); }
+            else { setQuizStreak(0); }
+          };
+
+          const handleNext = () => {
+            const el = pickRandom(quizSeen, 118);
+            if (!el) {
+              const empty = new Set();
+              setQuizSeen(empty);
+              setQuizCurrent(pickRandom(empty, 118));
+            } else {
+              setQuizCurrent(el);
+            }
+            setQuizAnswer("");
+            setQuizResult("idle");
+          };
+
+          return (
+            <div style={{ maxWidth: "520px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#f1f5f9", margin: 0 }}>{t.quizTitle}</h2>
+                <div style={{ display: "flex", gap: "16px", fontSize: "13px" }}>
+                  <span style={{ color: "#94a3b8" }}>{t.quizStreak}: <strong style={{ color: "#f59e0b" }}>{quizStreak}</strong></span>
+                  <span style={{ color: "#94a3b8" }}>{t.quizScore}: <strong style={{ color: "#60a5fa" }}>{quizScore}</strong></span>
+                </div>
+              </div>
+
+              {/* Selector de modo */}
+              <div style={{ display: "flex", gap: "4px", marginBottom: "20px", background: "rgba(255,255,255,0.04)", borderRadius: "8px", padding: "3px" }}>
+                {[["symbolToName", t.quizMode1], ["nameToSymbol", t.quizMode2], ["propertyToElement", t.quizMode3]].map(([id, label]) => (
+                  <button
+                    key={id}
+                    onClick={() => { setQuizMode(id); setQuizCurrent(null); setQuizAnswer(""); setQuizResult("idle"); }}
+                    style={{
+                      flex: 1,
+                      padding: "6px 8px",
+                      fontSize: "11px",
+                      background: quizMode === id ? "rgba(96,165,250,0.2)" : "transparent",
+                      border: `1px solid ${quizMode === id ? "rgba(96,165,250,0.4)" : "transparent"}`,
+                      borderRadius: "6px",
+                      color: quizMode === id ? "#93c5fd" : "#64748b",
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Tarjeta de pregunta */}
+              {!quizCurrent ? (
+                <div style={{ textAlign: "center", padding: "40px" }}>
+                  <button
+                    onClick={startQuiz}
+                    style={{
+                      padding: "12px 32px",
+                      background: "rgba(96,165,250,0.2)",
+                      border: "1px solid rgba(96,165,250,0.4)",
+                      borderRadius: "8px",
+                      color: "#93c5fd",
+                      fontSize: "15px",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                    }}
+                  >
+                    {lang === "es" ? "Comenzar Quiz" : "Start Quiz"}
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div style={{
+                    padding: "32px",
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: "12px",
+                    textAlign: "center",
+                    marginBottom: "16px",
+                  }}>
+                    <div style={{ fontSize: "11px", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "12px" }}>
+                      {t.quizGuess}
+                    </div>
+                    <div style={{ fontSize: quizMode === "propertyToElement" ? "18px" : "52px", fontWeight: "700", color: "#f1f5f9", lineHeight: 1.2 }}>
+                      {buildQuizQuestion(quizMode, quizCurrent, lang)}
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
+                    <input
+                      type="text"
+                      placeholder={t.quizAnswer}
+                      value={quizAnswer}
+                      onChange={e => setQuizAnswer(e.target.value)}
+                      onKeyDown={e => { if (e.key === "Enter") quizResult === "idle" ? handleCheck() : handleNext(); }}
+                      disabled={quizResult !== "idle"}
+                      style={{
+                        flex: 1,
+                        padding: "10px 14px",
+                        background: "rgba(255,255,255,0.06)",
+                        border: `1px solid ${quizResult === "correct" ? "rgba(34,197,94,0.5)" : quizResult === "wrong" ? "rgba(239,68,68,0.5)" : "rgba(255,255,255,0.12)"}`,
+                        borderRadius: "8px",
+                        color: "#f1f5f9",
+                        fontSize: "16px",
+                        fontFamily: "inherit",
+                        outline: "none",
+                      }}
+                    />
+                    {quizResult === "idle" ? (
+                      <button
+                        onClick={handleCheck}
+                        style={{ padding: "10px 18px", background: "rgba(96,165,250,0.2)", border: "1px solid rgba(96,165,250,0.4)", borderRadius: "8px", color: "#93c5fd", cursor: "pointer", fontFamily: "inherit", fontSize: "14px", fontWeight: "600" }}
+                      >
+                        {t.quizCheck}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleNext}
+                        style={{ padding: "10px 18px", background: "rgba(96,165,250,0.2)", border: "1px solid rgba(96,165,250,0.4)", borderRadius: "8px", color: "#93c5fd", cursor: "pointer", fontFamily: "inherit", fontSize: "14px", fontWeight: "600" }}
+                      >
+                        {t.quizNext}
+                      </button>
+                    )}
+                  </div>
+
+                  {quizResult !== "idle" && (
+                    <div style={{
+                      padding: "12px 16px",
+                      borderRadius: "8px",
+                      background: quizResult === "correct" ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
+                      border: `1px solid ${quizResult === "correct" ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.3)"}`,
+                      color: quizResult === "correct" ? "#86efac" : "#fca5a5",
+                      fontSize: "14px",
+                    }}>
+                      {quizResult === "correct"
+                        ? t.quizCorrect
+                        : `${t.quizWrong} ${quizMode === "nameToSymbol" ? quizCurrent.s : quizCurrent.name[lang]}`
+                      }
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })()}
 
       </div>
     </div>
