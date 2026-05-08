@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { heatColor } from './utils.js';
+import { heatColor, parseFormula } from './utils.js';
 
 const ELEMENTS = [
   { n: 1, s: "H", name: { en: "Hydrogen", es: "Hidrógeno" }, mass: 1.008, cat: "nonmetal", row: 1, col: 1, config: "1s¹", phase: { en: "Gas", es: "Gas" }, melt: -259.16, boil: -252.87, discovered: 1766, discoverer: "Henry Cavendish", electroneg: 2.2, radius: 53, ionization: 1312, oxidation: ["+1","-1"], desc: { en: "The lightest and most abundant element in the universe. Forms water with oxygen.", es: "El elemento más ligero y abundante del universo. Forma agua con el oxígeno." } },
@@ -122,6 +122,8 @@ const ELEMENTS = [
   { n: 118, s: "Og", name: { en: "Oganesson", es: "Oganesón" }, mass: 294, cat: "noble", row: 7, col: 18, config: "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁶", phase: { en: "Gas", es: "Gas" }, melt: null, boil: null, discovered: 2002, discoverer: "Yuri Oganessian", electroneg: null, radius: null, ionization: null, oxidation: null, desc: { en: "Heaviest known element. Named after Yuri Oganessian, who is still alive.", es: "Elemento conocido más pesado. Nombrado en honor a Yuri Oganessian, quien aún vive." } }
 ];
 
+const ELEMENT_BY_SYMBOL = Object.fromEntries(ELEMENTS.map(e => [e.s, e]));
+
 const CATEGORIES = {
   alkali: { label: { en: "Alkali metals", es: "Metales alcalinos" }, color: "#ef4444", bg: "rgba(239,68,68,0.15)", border: "rgba(239,68,68,0.5)" },
   alkaline: { label: { en: "Alkaline earth", es: "Alcalinotérreos" }, color: "#f97316", bg: "rgba(249,115,22,0.15)", border: "rgba(249,115,22,0.5)" },
@@ -170,7 +172,16 @@ const T = {
     tabTable:    "🔬 Table",
     tabCalc:     "⚗️ Calculator",
     tabCompare:  "🔍 Compare",
-    tabQuiz:     "📝 Quiz"
+    tabQuiz:     "📝 Quiz",
+    calcTitle:       "Molar Mass Calculator",
+    calcPlaceholder: "Enter formula (e.g. H2O, Ca(OH)2)",
+    calcMolarMass:   "Molar mass",
+    calcElement:     "Element",
+    calcAtoms:       "Atoms",
+    calcMassPerAtom: "Mass/atom (u)",
+    calcSubtotal:    "Subtotal (u)",
+    calcPct:         "% by mass",
+    calcError:       "Invalid formula",
   },
   es: {
     title: "Tabla Periódica Interactiva",
@@ -197,7 +208,16 @@ const T = {
     tabTable:    "🔬 Tabla",
     tabCalc:     "⚗️ Calculadora",
     tabCompare:  "🔍 Comparar",
-    tabQuiz:     "📝 Quiz"
+    tabQuiz:     "📝 Quiz",
+    calcTitle:       "Calculadora de Masa Molar",
+    calcPlaceholder: "Ingresa fórmula (ej. H2O, Ca(OH)2)",
+    calcMolarMass:   "Masa molar",
+    calcElement:     "Elemento",
+    calcAtoms:       "Átomos",
+    calcMassPerAtom: "Masa/átomo (u)",
+    calcSubtotal:    "Subtotal (u)",
+    calcPct:         "% en masa",
+    calcError:       "Fórmula inválida",
   }
 };
 
@@ -209,6 +229,7 @@ export default function PeriodicTable() {
   const [propertyMode, setPropertyMode] = useState("category");
   const [lang, setLang] = useState("es");
   const [activeTab, setActiveTab] = useState("table"); // "table"|"calculator"|"compare"|"quiz"
+  const [formula, setFormula] = useState("");
 
   const t = T[lang];
 
@@ -234,6 +255,26 @@ export default function PeriodicTable() {
     const values = ELEMENTS.map(e => e[mode.prop]).filter(v => v !== null && v !== undefined);
     return { min: Math.min(...values), max: Math.max(...values) };
   }, [propertyMode]);
+
+  const calcResult = useMemo(() => {
+    if (!formula.trim()) return null;
+    const parsed = parseFormula(formula);
+    if (!parsed.ok) return { error: parsed.error };
+
+    const rows = [];
+    let total = 0;
+    for (const [sym, count] of Object.entries(parsed.counts)) {
+      const el = ELEMENT_BY_SYMBOL[sym];
+      if (!el) return { error: lang === "es" ? `Símbolo desconocido: ${sym}` : `Unknown symbol: ${sym}` };
+      const subtotal = el.mass * count;
+      total += subtotal;
+      rows.push({ sym, name: el.name[lang], count, massPerAtom: el.mass, subtotal });
+    }
+    return {
+      total,
+      rows: rows.map(r => ({ ...r, pct: ((r.subtotal / total) * 100).toFixed(2) })),
+    };
+  }, [formula, lang]);
 
   const display = hovered || selected;
 
@@ -556,8 +597,72 @@ export default function PeriodicTable() {
         )}
 
         {activeTab === "calculator" && (
-          <div style={{ color: "#94a3b8", padding: "40px", textAlign: "center" }}>
-            Calculadora — próximamente
+          <div style={{ maxWidth: "700px" }}>
+            <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#f1f5f9", marginBottom: "20px" }}>
+              {t.calcTitle}
+            </h2>
+
+            <input
+              type="text"
+              placeholder={t.calcPlaceholder}
+              value={formula}
+              onChange={e => setFormula(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "12px 16px",
+                background: "rgba(255,255,255,0.07)",
+                border: "1px solid rgba(255,255,255,0.15)",
+                borderRadius: "8px",
+                color: "#f1f5f9",
+                fontSize: "18px",
+                fontFamily: "monospace",
+                outline: "none",
+                marginBottom: "20px",
+                boxSizing: "border-box",
+              }}
+            />
+
+            {calcResult?.error && (
+              <div style={{ padding: "12px 16px", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: "8px", color: "#fca5a5", marginBottom: "16px" }}>
+                {calcResult.error}
+              </div>
+            )}
+
+            {calcResult && !calcResult.error && (
+              <>
+                <div style={{ fontSize: "28px", fontWeight: "700", color: "#60a5fa", marginBottom: "20px" }}>
+                  {calcResult.total.toFixed(4)} <span style={{ fontSize: "16px", color: "#94a3b8" }}>g/mol</span>
+                </div>
+
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+                  <thead>
+                    <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+                      {[t.calcElement, t.calcAtoms, t.calcMassPerAtom, t.calcSubtotal, t.calcPct].map(h => (
+                        <th key={h} style={{ padding: "8px 12px", textAlign: "left", color: "#94a3b8", fontWeight: "500" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {calcResult.rows.map(row => (
+                      <tr key={row.sym} style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                        <td style={{ padding: "10px 12px", color: "#f1f5f9", fontWeight: "600" }}>
+                          {row.sym} <span style={{ color: "#94a3b8", fontWeight: "400" }}>— {row.name}</span>
+                        </td>
+                        <td style={{ padding: "10px 12px", color: "#e2e8f0", textAlign: "center" }}>{row.count}</td>
+                        <td style={{ padding: "10px 12px", color: "#e2e8f0" }}>{row.massPerAtom.toFixed(4)}</td>
+                        <td style={{ padding: "10px 12px", color: "#e2e8f0" }}>{row.subtotal.toFixed(4)}</td>
+                        <td style={{ padding: "10px 12px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                            <div style={{ width: `${parseFloat(row.pct)}%`, maxWidth: "60px", height: "4px", borderRadius: "2px", background: "#60a5fa" }} />
+                            <span style={{ color: "#93c5fd" }}>{row.pct}%</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            )}
           </div>
         )}
 
