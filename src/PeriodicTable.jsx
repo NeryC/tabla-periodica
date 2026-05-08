@@ -206,6 +206,7 @@ export default function PeriodicTable() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState(null);
   const [lang, setLang] = useState("es");
+  const [activeTab, setActiveTab] = useState("table"); // "table"|"calculator"|"compare"|"quiz"
 
   const t = T[lang];
 
@@ -263,6 +264,38 @@ export default function PeriodicTable() {
           </div>
         </header>
 
+        {/* Barra de pestañas */}
+        <div style={{ display: "flex", gap: "2px", marginBottom: "20px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "4px" }}>
+          {[
+            { id: "table",      label: t.tabTable },
+            { id: "calculator", label: t.tabCalc },
+            { id: "compare",    label: t.tabCompare },
+            { id: "quiz",       label: t.tabQuiz },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                flex: 1,
+                padding: "8px 12px",
+                background: activeTab === tab.id ? "rgba(96,165,250,0.2)" : "transparent",
+                border: activeTab === tab.id ? "1px solid rgba(96,165,250,0.4)" : "1px solid transparent",
+                borderRadius: "7px",
+                color: activeTab === tab.id ? "#fff" : "#94a3b8",
+                fontSize: "13px",
+                fontWeight: activeTab === tab.id ? "600" : "400",
+                cursor: "pointer",
+                fontFamily: "inherit",
+                transition: "all 0.15s",
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === "table" && (
+        <>
         <div style={{ display: "flex", gap: "12px", marginBottom: "16px", flexWrap: "wrap", alignItems: "center" }}>
           <input
             type="text"
@@ -433,6 +466,27 @@ export default function PeriodicTable() {
             </div>
           )}
         </div>
+        </>
+        )}
+
+        {activeTab === "calculator" && (
+          <div style={{ color: "#94a3b8", padding: "40px", textAlign: "center" }}>
+            Calculadora — próximamente
+          </div>
+        )}
+
+        {activeTab === "compare" && (
+          <div style={{ color: "#94a3b8", padding: "40px", textAlign: "center" }}>
+            Comparar — próximamente
+          </div>
+        )}
+
+        {activeTab === "quiz" && (
+          <div style={{ color: "#94a3b8", padding: "40px", textAlign: "center" }}>
+            Quiz — próximamente
+          </div>
+        )}
+
       </div>
     </div>
   );
