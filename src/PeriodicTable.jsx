@@ -1,0 +1,421 @@
+import React, { useState, useMemo } from "react";
+
+const ELEMENTS = [
+  { n: 1, s: "H", name: { en: "Hydrogen", es: "Hidrógeno" }, mass: 1.008, cat: "nonmetal", row: 1, col: 1, config: "1s¹", phase: { en: "Gas", es: "Gas" }, melt: -259.16, boil: -252.87, discovered: 1766, discoverer: "Henry Cavendish", desc: { en: "The lightest and most abundant element in the universe. Forms water with oxygen.", es: "El elemento más ligero y abundante del universo. Forma agua con el oxígeno." } },
+  { n: 2, s: "He", name: { en: "Helium", es: "Helio" }, mass: 4.0026, cat: "noble", row: 1, col: 18, config: "1s²", phase: { en: "Gas", es: "Gas" }, melt: -272.2, boil: -268.93, discovered: 1868, discoverer: "Pierre Janssen", desc: { en: "Second most abundant element. Used in balloons and as a coolant for superconductors.", es: "Segundo elemento más abundante. Usado en globos y como refrigerante para superconductores." } },
+  { n: 3, s: "Li", name: { en: "Lithium", es: "Litio" }, mass: 6.94, cat: "alkali", row: 2, col: 1, config: "[He] 2s¹", phase: { en: "Solid", es: "Sólido" }, melt: 180.5, boil: 1342, discovered: 1817, discoverer: "Johan August Arfwedson", desc: { en: "Lightest metal. Used in rechargeable batteries and mood-stabilizing medications.", es: "El metal más ligero. Usado en baterías recargables y medicamentos estabilizadores del ánimo." } },
+  { n: 4, s: "Be", name: { en: "Beryllium", es: "Berilio" }, mass: 9.0122, cat: "alkaline", row: 2, col: 2, config: "[He] 2s²", phase: { en: "Solid", es: "Sólido" }, melt: 1287, boil: 2469, discovered: 1798, discoverer: "Louis-Nicolas Vauquelin", desc: { en: "Strong, lightweight metal used in aerospace and X-ray equipment windows.", es: "Metal fuerte y ligero usado en aeroespacial y ventanas de equipos de rayos X." } },
+  { n: 5, s: "B", name: { en: "Boron", es: "Boro" }, mass: 10.81, cat: "metalloid", row: 2, col: 13, config: "[He] 2s² 2p¹", phase: { en: "Solid", es: "Sólido" }, melt: 2076, boil: 3927, discovered: 1808, discoverer: "Joseph Louis Gay-Lussac", desc: { en: "Metalloid used in glass, ceramics, and detergents (borax).", es: "Metaloide usado en vidrio, cerámica y detergentes (bórax)." } },
+  { n: 6, s: "C", name: { en: "Carbon", es: "Carbono" }, mass: 12.011, cat: "nonmetal", row: 2, col: 14, config: "[He] 2s² 2p²", phase: { en: "Solid", es: "Sólido" }, melt: 3550, boil: 4027, discovered: -3750, discoverer: "Ancient", desc: { en: "Foundation of all known life. Forms diamonds, graphite, and millions of organic compounds.", es: "Base de toda la vida conocida. Forma diamantes, grafito y millones de compuestos orgánicos." } },
+  { n: 7, s: "N", name: { en: "Nitrogen", es: "Nitrógeno" }, mass: 14.007, cat: "nonmetal", row: 2, col: 15, config: "[He] 2s² 2p³", phase: { en: "Gas", es: "Gas" }, melt: -210, boil: -195.79, discovered: 1772, discoverer: "Daniel Rutherford", desc: { en: "Makes up 78% of Earth's atmosphere. Essential for proteins and DNA.", es: "Constituye el 78% de la atmósfera terrestre. Esencial para proteínas y ADN." } },
+  { n: 8, s: "O", name: { en: "Oxygen", es: "Oxígeno" }, mass: 15.999, cat: "nonmetal", row: 2, col: 16, config: "[He] 2s² 2p⁴", phase: { en: "Gas", es: "Gas" }, melt: -218.79, boil: -182.96, discovered: 1774, discoverer: "Carl Wilhelm Scheele", desc: { en: "Essential for respiration in most life forms. Highly reactive oxidizer.", es: "Esencial para la respiración en la mayoría de formas de vida. Oxidante altamente reactivo." } },
+  { n: 9, s: "F", name: { en: "Fluorine", es: "Flúor" }, mass: 18.998, cat: "halogen", row: 2, col: 17, config: "[He] 2s² 2p⁵", phase: { en: "Gas", es: "Gas" }, melt: -219.67, boil: -188.11, discovered: 1886, discoverer: "Henri Moissan", desc: { en: "Most reactive and electronegative element. Used in toothpaste and Teflon.", es: "El elemento más reactivo y electronegativo. Usado en pasta dental y Teflón." } },
+  { n: 10, s: "Ne", name: { en: "Neon", es: "Neón" }, mass: 20.180, cat: "noble", row: 2, col: 18, config: "[He] 2s² 2p⁶", phase: { en: "Gas", es: "Gas" }, melt: -248.59, boil: -246.05, discovered: 1898, discoverer: "William Ramsay", desc: { en: "Inert gas famous for its bright orange-red glow in advertising signs.", es: "Gas inerte famoso por su brillo naranja-rojo en letreros publicitarios." } },
+  { n: 11, s: "Na", name: { en: "Sodium", es: "Sodio" }, mass: 22.990, cat: "alkali", row: 3, col: 1, config: "[Ne] 3s¹", phase: { en: "Solid", es: "Sólido" }, melt: 97.79, boil: 883, discovered: 1807, discoverer: "Humphry Davy", desc: { en: "Soft silvery metal. Essential electrolyte in biology; reacts violently with water.", es: "Metal blando y plateado. Electrolito esencial en biología; reacciona violentamente con el agua." } },
+  { n: 12, s: "Mg", name: { en: "Magnesium", es: "Magnesio" }, mass: 24.305, cat: "alkaline", row: 3, col: 2, config: "[Ne] 3s²", phase: { en: "Solid", es: "Sólido" }, melt: 650, boil: 1090, discovered: 1808, discoverer: "Humphry Davy", desc: { en: "Lightweight structural metal. Burns with brilliant white flame; used in flares.", es: "Metal estructural ligero. Arde con llama blanca brillante; usado en bengalas." } },
+  { n: 13, s: "Al", name: { en: "Aluminum", es: "Aluminio" }, mass: 26.982, cat: "post-transition", row: 3, col: 13, config: "[Ne] 3s² 3p¹", phase: { en: "Solid", es: "Sólido" }, melt: 660.32, boil: 2470, discovered: 1825, discoverer: "Hans Christian Ørsted", desc: { en: "Most abundant metal in Earth's crust. Lightweight and corrosion-resistant.", es: "El metal más abundante en la corteza terrestre. Ligero y resistente a la corrosión." } },
+  { n: 14, s: "Si", name: { en: "Silicon", es: "Silicio" }, mass: 28.085, cat: "metalloid", row: 3, col: 14, config: "[Ne] 3s² 3p²", phase: { en: "Solid", es: "Sólido" }, melt: 1414, boil: 3265, discovered: 1824, discoverer: "Jöns Jacob Berzelius", desc: { en: "Foundation of modern electronics and computer chips. Second most abundant element in Earth's crust.", es: "Base de la electrónica moderna y los chips. Segundo elemento más abundante en la corteza terrestre." } },
+  { n: 15, s: "P", name: { en: "Phosphorus", es: "Fósforo" }, mass: 30.974, cat: "nonmetal", row: 3, col: 15, config: "[Ne] 3s² 3p³", phase: { en: "Solid", es: "Sólido" }, melt: 44.15, boil: 280.5, discovered: 1669, discoverer: "Hennig Brand", desc: { en: "Essential for DNA, ATP, and bones. White phosphorus is highly flammable.", es: "Esencial para el ADN, ATP y huesos. El fósforo blanco es altamente inflamable." } },
+  { n: 16, s: "S", name: { en: "Sulfur", es: "Azufre" }, mass: 32.06, cat: "nonmetal", row: 3, col: 16, config: "[Ne] 3s² 3p⁴", phase: { en: "Solid", es: "Sólido" }, melt: 115.21, boil: 444.61, discovered: -2000, discoverer: "Ancient", desc: { en: "Yellow nonmetal known since antiquity. Found in proteins and used to make sulfuric acid.", es: "No metal amarillo conocido desde la antigüedad. Se encuentra en proteínas y se usa para hacer ácido sulfúrico." } },
+  { n: 17, s: "Cl", name: { en: "Chlorine", es: "Cloro" }, mass: 35.45, cat: "halogen", row: 3, col: 17, config: "[Ne] 3s² 3p⁵", phase: { en: "Gas", es: "Gas" }, melt: -101.5, boil: -34.04, discovered: 1774, discoverer: "Carl Wilhelm Scheele", desc: { en: "Greenish-yellow toxic gas. Used to disinfect water and make PVC.", es: "Gas tóxico amarillo-verdoso. Usado para desinfectar agua y fabricar PVC." } },
+  { n: 18, s: "Ar", name: { en: "Argon", es: "Argón" }, mass: 39.948, cat: "noble", row: 3, col: 18, config: "[Ne] 3s² 3p⁶", phase: { en: "Gas", es: "Gas" }, melt: -189.34, boil: -185.85, discovered: 1894, discoverer: "Lord Rayleigh", desc: { en: "Third most abundant gas in atmosphere. Used in welding and incandescent bulbs.", es: "Tercer gas más abundante en la atmósfera. Usado en soldadura y bombillas incandescentes." } },
+  { n: 19, s: "K", name: { en: "Potassium", es: "Potasio" }, mass: 39.098, cat: "alkali", row: 4, col: 1, config: "[Ar] 4s¹", phase: { en: "Solid", es: "Sólido" }, melt: 63.5, boil: 759, discovered: 1807, discoverer: "Humphry Davy", desc: { en: "Essential electrolyte for nerve function. Reacts violently with water.", es: "Electrolito esencial para la función nerviosa. Reacciona violentamente con el agua." } },
+  { n: 20, s: "Ca", name: { en: "Calcium", es: "Calcio" }, mass: 40.078, cat: "alkaline", row: 4, col: 2, config: "[Ar] 4s²", phase: { en: "Solid", es: "Sólido" }, melt: 842, boil: 1484, discovered: 1808, discoverer: "Humphry Davy", desc: { en: "Critical for bones, teeth, and muscle contraction. Found in limestone.", es: "Crítico para huesos, dientes y contracción muscular. Se encuentra en la piedra caliza." } },
+  { n: 21, s: "Sc", name: { en: "Scandium", es: "Escandio" }, mass: 44.956, cat: "transition", row: 4, col: 3, config: "[Ar] 3d¹ 4s²", phase: { en: "Solid", es: "Sólido" }, melt: 1541, boil: 2836, discovered: 1879, discoverer: "Lars Fredrik Nilson", desc: { en: "Rare transition metal used in aerospace alloys and stadium lights.", es: "Metal de transición raro usado en aleaciones aeroespaciales y luces de estadio." } },
+  { n: 22, s: "Ti", name: { en: "Titanium", es: "Titanio" }, mass: 47.867, cat: "transition", row: 4, col: 4, config: "[Ar] 3d² 4s²", phase: { en: "Solid", es: "Sólido" }, melt: 1668, boil: 3287, discovered: 1791, discoverer: "William Gregor", desc: { en: "Strong, lightweight, corrosion-resistant. Used in aircraft and medical implants.", es: "Fuerte, ligero y resistente a la corrosión. Usado en aviones e implantes médicos." } },
+  { n: 23, s: "V", name: { en: "Vanadium", es: "Vanadio" }, mass: 50.942, cat: "transition", row: 4, col: 5, config: "[Ar] 3d³ 4s²", phase: { en: "Solid", es: "Sólido" }, melt: 1910, boil: 3407, discovered: 1801, discoverer: "Andrés Manuel del Río", desc: { en: "Hard transition metal. Added to steel for strength in tools and engines.", es: "Metal de transición duro. Añadido al acero para dar resistencia a herramientas y motores." } },
+  { n: 24, s: "Cr", name: { en: "Chromium", es: "Cromo" }, mass: 51.996, cat: "transition", row: 4, col: 6, config: "[Ar] 3d⁵ 4s¹", phase: { en: "Solid", es: "Sólido" }, melt: 1907, boil: 2671, discovered: 1797, discoverer: "Louis-Nicolas Vauquelin", desc: { en: "Lustrous metal. Provides corrosion resistance in stainless steel and chrome plating.", es: "Metal lustroso. Da resistencia a la corrosión al acero inoxidable y al cromado." } },
+  { n: 25, s: "Mn", name: { en: "Manganese", es: "Manganeso" }, mass: 54.938, cat: "transition", row: 4, col: 7, config: "[Ar] 3d⁵ 4s²", phase: { en: "Solid", es: "Sólido" }, melt: 1246, boil: 2061, discovered: 1774, discoverer: "Johan Gottlieb Gahn", desc: { en: "Essential for steel production and biological enzymes.", es: "Esencial para la producción de acero y enzimas biológicas." } },
+  { n: 26, s: "Fe", name: { en: "Iron", es: "Hierro" }, mass: 55.845, cat: "transition", row: 4, col: 8, config: "[Ar] 3d⁶ 4s²", phase: { en: "Solid", es: "Sólido" }, melt: 1538, boil: 2862, discovered: -5000, discoverer: "Ancient", desc: { en: "Most common element on Earth by mass. Carries oxygen in hemoglobin.", es: "Elemento más común en la Tierra por masa. Transporta oxígeno en la hemoglobina." } },
+  { n: 27, s: "Co", name: { en: "Cobalt", es: "Cobalto" }, mass: 58.933, cat: "transition", row: 4, col: 9, config: "[Ar] 3d⁷ 4s²", phase: { en: "Solid", es: "Sólido" }, melt: 1495, boil: 2927, discovered: 1735, discoverer: "Georg Brandt", desc: { en: "Magnetic metal used in lithium-ion batteries and blue pigments.", es: "Metal magnético usado en baterías de iones de litio y pigmentos azules." } },
+  { n: 28, s: "Ni", name: { en: "Nickel", es: "Níquel" }, mass: 58.693, cat: "transition", row: 4, col: 10, config: "[Ar] 3d⁸ 4s²", phase: { en: "Solid", es: "Sólido" }, melt: 1455, boil: 2913, discovered: 1751, discoverer: "Axel Fredrik Cronstedt", desc: { en: "Corrosion-resistant metal. Used in coins, stainless steel, and rechargeable batteries.", es: "Metal resistente a la corrosión. Usado en monedas, acero inoxidable y baterías recargables." } },
+  { n: 29, s: "Cu", name: { en: "Copper", es: "Cobre" }, mass: 63.546, cat: "transition", row: 4, col: 11, config: "[Ar] 3d¹⁰ 4s¹", phase: { en: "Solid", es: "Sólido" }, melt: 1084.62, boil: 2562, discovered: -9000, discoverer: "Ancient", desc: { en: "Excellent conductor of heat and electricity. Used in wiring and plumbing.", es: "Excelente conductor de calor y electricidad. Usado en cableado y fontanería." } },
+  { n: 30, s: "Zn", name: { en: "Zinc", es: "Zinc" }, mass: 65.38, cat: "transition", row: 4, col: 12, config: "[Ar] 3d¹⁰ 4s²", phase: { en: "Solid", es: "Sólido" }, melt: 419.53, boil: 907, discovered: 1746, discoverer: "Andreas Sigismund Marggraf", desc: { en: "Used to galvanize steel against corrosion. Essential trace mineral for immunity.", es: "Usado para galvanizar acero contra la corrosión. Mineral traza esencial para la inmunidad." } },
+  { n: 31, s: "Ga", name: { en: "Gallium", es: "Galio" }, mass: 69.723, cat: "post-transition", row: 4, col: 13, config: "[Ar] 3d¹⁰ 4s² 4p¹", phase: { en: "Solid", es: "Sólido" }, melt: 29.76, boil: 2204, discovered: 1875, discoverer: "Paul-Émile Lecoq", desc: { en: "Melts in your hand. Used in semiconductors and LED technology.", es: "Se derrite en la mano. Usado en semiconductores y tecnología LED." } },
+  { n: 32, s: "Ge", name: { en: "Germanium", es: "Germanio" }, mass: 72.630, cat: "metalloid", row: 4, col: 14, config: "[Ar] 3d¹⁰ 4s² 4p²", phase: { en: "Solid", es: "Sólido" }, melt: 938.25, boil: 2833, discovered: 1886, discoverer: "Clemens Winkler", desc: { en: "Semiconductor used in fiber optics and infrared optics.", es: "Semiconductor usado en fibra óptica y óptica infrarroja." } },
+  { n: 33, s: "As", name: { en: "Arsenic", es: "Arsénico" }, mass: 74.922, cat: "metalloid", row: 4, col: 15, config: "[Ar] 3d¹⁰ 4s² 4p³", phase: { en: "Solid", es: "Sólido" }, melt: 817, boil: 614, discovered: 1250, discoverer: "Albertus Magnus", desc: { en: "Notoriously toxic metalloid. Historically used as a poison; now in semiconductors.", es: "Metaloide notoriamente tóxico. Históricamente usado como veneno; ahora en semiconductores." } },
+  { n: 34, s: "Se", name: { en: "Selenium", es: "Selenio" }, mass: 78.971, cat: "nonmetal", row: 4, col: 16, config: "[Ar] 3d¹⁰ 4s² 4p⁴", phase: { en: "Solid", es: "Sólido" }, melt: 221, boil: 685, discovered: 1817, discoverer: "Jöns Jacob Berzelius", desc: { en: "Photoconductor used in solar cells and photocopiers. Essential trace nutrient.", es: "Fotoconductor usado en células solares y fotocopiadoras. Nutriente traza esencial." } },
+  { n: 35, s: "Br", name: { en: "Bromine", es: "Bromo" }, mass: 79.904, cat: "halogen", row: 4, col: 17, config: "[Ar] 3d¹⁰ 4s² 4p⁵", phase: { en: "Liquid", es: "Líquido" }, melt: -7.2, boil: 58.8, discovered: 1826, discoverer: "Antoine Jérôme Balard", desc: { en: "One of only two elements liquid at room temperature. Used in flame retardants.", es: "Uno de los dos únicos elementos líquidos a temperatura ambiente. Usado en retardantes de llama." } },
+  { n: 36, s: "Kr", name: { en: "Krypton", es: "Kriptón" }, mass: 83.798, cat: "noble", row: 4, col: 18, config: "[Ar] 3d¹⁰ 4s² 4p⁶", phase: { en: "Gas", es: "Gas" }, melt: -157.37, boil: -153.42, discovered: 1898, discoverer: "William Ramsay", desc: { en: "Noble gas used in high-performance lighting and lasers.", es: "Gas noble usado en iluminación de alto rendimiento y láseres." } },
+  { n: 37, s: "Rb", name: { en: "Rubidium", es: "Rubidio" }, mass: 85.468, cat: "alkali", row: 5, col: 1, config: "[Kr] 5s¹", phase: { en: "Solid", es: "Sólido" }, melt: 39.31, boil: 688, discovered: 1861, discoverer: "Robert Bunsen", desc: { en: "Highly reactive alkali metal. Used in atomic clocks and specialty glass.", es: "Metal alcalino altamente reactivo. Usado en relojes atómicos y vidrios especiales." } },
+  { n: 38, s: "Sr", name: { en: "Strontium", es: "Estroncio" }, mass: 87.62, cat: "alkaline", row: 5, col: 2, config: "[Kr] 5s²", phase: { en: "Solid", es: "Sólido" }, melt: 777, boil: 1377, discovered: 1790, discoverer: "Adair Crawford", desc: { en: "Burns with brilliant red flame. Used in fireworks and old CRT TVs.", es: "Arde con llama roja brillante. Usado en fuegos artificiales y antiguos televisores CRT." } },
+  { n: 39, s: "Y", name: { en: "Yttrium", es: "Itrio" }, mass: 88.906, cat: "transition", row: 5, col: 3, config: "[Kr] 4d¹ 5s²", phase: { en: "Solid", es: "Sólido" }, melt: 1526, boil: 3336, discovered: 1794, discoverer: "Johan Gadolin", desc: { en: "Used in LED phosphors, superconductors, and cancer treatments.", es: "Usado en fósforos LED, superconductores y tratamientos contra el cáncer." } },
+  { n: 40, s: "Zr", name: { en: "Zirconium", es: "Circonio" }, mass: 91.224, cat: "transition", row: 5, col: 4, config: "[Kr] 4d² 5s²", phase: { en: "Solid", es: "Sólido" }, melt: 1855, boil: 4409, discovered: 1789, discoverer: "Martin Heinrich Klaproth", desc: { en: "Corrosion-resistant metal used in nuclear reactors and dental crowns.", es: "Metal resistente a la corrosión usado en reactores nucleares y coronas dentales." } },
+  { n: 41, s: "Nb", name: { en: "Niobium", es: "Niobio" }, mass: 92.906, cat: "transition", row: 5, col: 5, config: "[Kr] 4d⁴ 5s¹", phase: { en: "Solid", es: "Sólido" }, melt: 2477, boil: 4744, discovered: 1801, discoverer: "Charles Hatchett", desc: { en: "Used in superconducting magnets for MRI machines and particle accelerators.", es: "Usado en imanes superconductores para resonancias magnéticas y aceleradores de partículas." } },
+  { n: 42, s: "Mo", name: { en: "Molybdenum", es: "Molibdeno" }, mass: 95.95, cat: "transition", row: 5, col: 6, config: "[Kr] 4d⁵ 5s¹", phase: { en: "Solid", es: "Sólido" }, melt: 2623, boil: 4639, discovered: 1778, discoverer: "Carl Wilhelm Scheele", desc: { en: "High-strength metal used in steel alloys for armor and aircraft.", es: "Metal de alta resistencia usado en aleaciones de acero para blindajes y aviones." } },
+  { n: 43, s: "Tc", name: { en: "Technetium", es: "Tecnecio" }, mass: 98, cat: "transition", row: 5, col: 7, config: "[Kr] 4d⁵ 5s²", phase: { en: "Solid", es: "Sólido" }, melt: 2157, boil: 4265, discovered: 1937, discoverer: "Emilio Segrè", desc: { en: "First artificially produced element. Used in medical imaging.", es: "Primer elemento producido artificialmente. Usado en imágenes médicas." } },
+  { n: 44, s: "Ru", name: { en: "Ruthenium", es: "Rutenio" }, mass: 101.07, cat: "transition", row: 5, col: 8, config: "[Kr] 4d⁷ 5s¹", phase: { en: "Solid", es: "Sólido" }, melt: 2334, boil: 4150, discovered: 1844, discoverer: "Karl Ernst Claus", desc: { en: "Rare platinum-group metal used in electronics and solar cells.", es: "Raro metal del grupo del platino usado en electrónica y células solares." } },
+  { n: 45, s: "Rh", name: { en: "Rhodium", es: "Rodio" }, mass: 102.91, cat: "transition", row: 5, col: 9, config: "[Kr] 4d⁸ 5s¹", phase: { en: "Solid", es: "Sólido" }, melt: 1964, boil: 3695, discovered: 1803, discoverer: "William Hyde Wollaston", desc: { en: "Extremely rare and expensive. Used in catalytic converters.", es: "Extremadamente raro y caro. Usado en convertidores catalíticos." } },
+  { n: 46, s: "Pd", name: { en: "Palladium", es: "Paladio" }, mass: 106.42, cat: "transition", row: 5, col: 10, config: "[Kr] 4d¹⁰", phase: { en: "Solid", es: "Sólido" }, melt: 1554.9, boil: 2963, discovered: 1803, discoverer: "William Hyde Wollaston", desc: { en: "Used in catalytic converters and dental crowns. Absorbs hydrogen.", es: "Usado en convertidores catalíticos y coronas dentales. Absorbe hidrógeno." } },
+  { n: 47, s: "Ag", name: { en: "Silver", es: "Plata" }, mass: 107.87, cat: "transition", row: 5, col: 11, config: "[Kr] 4d¹⁰ 5s¹", phase: { en: "Solid", es: "Sólido" }, melt: 961.78, boil: 2162, discovered: -3000, discoverer: "Ancient", desc: { en: "Best electrical and thermal conductor. Used in jewelry, photography, and electronics.", es: "Mejor conductor eléctrico y térmico. Usado en joyería, fotografía y electrónica." } },
+  { n: 48, s: "Cd", name: { en: "Cadmium", es: "Cadmio" }, mass: 112.41, cat: "transition", row: 5, col: 12, config: "[Kr] 4d¹⁰ 5s²", phase: { en: "Solid", es: "Sólido" }, melt: 321.07, boil: 767, discovered: 1817, discoverer: "Friedrich Stromeyer", desc: { en: "Toxic heavy metal used in rechargeable NiCd batteries and pigments.", es: "Metal pesado tóxico usado en baterías recargables NiCd y pigmentos." } },
+  { n: 49, s: "In", name: { en: "Indium", es: "Indio" }, mass: 114.82, cat: "post-transition", row: 5, col: 13, config: "[Kr] 4d¹⁰ 5s² 5p¹", phase: { en: "Solid", es: "Sólido" }, melt: 156.6, boil: 2072, discovered: 1863, discoverer: "Ferdinand Reich", desc: { en: "Soft metal used in touchscreens (indium tin oxide) and solders.", es: "Metal blando usado en pantallas táctiles (óxido de indio y estaño) y soldaduras." } },
+  { n: 50, s: "Sn", name: { en: "Tin", es: "Estaño" }, mass: 118.71, cat: "post-transition", row: 5, col: 14, config: "[Kr] 4d¹⁰ 5s² 5p²", phase: { en: "Solid", es: "Sólido" }, melt: 231.93, boil: 2602, discovered: -3000, discoverer: "Ancient", desc: { en: "Combined with copper to make bronze. Used in solders and cans.", es: "Combinado con cobre para hacer bronce. Usado en soldaduras y latas." } },
+  { n: 51, s: "Sb", name: { en: "Antimony", es: "Antimonio" }, mass: 121.76, cat: "metalloid", row: 5, col: 15, config: "[Kr] 4d¹⁰ 5s² 5p³", phase: { en: "Solid", es: "Sólido" }, melt: 630.63, boil: 1587, discovered: -3000, discoverer: "Ancient", desc: { en: "Used in flame retardants, batteries, and ancient cosmetics (kohl).", es: "Usado en retardantes de llama, baterías y cosméticos antiguos (kohl)." } },
+  { n: 52, s: "Te", name: { en: "Tellurium", es: "Telurio" }, mass: 127.60, cat: "metalloid", row: 5, col: 16, config: "[Kr] 4d¹⁰ 5s² 5p⁴", phase: { en: "Solid", es: "Sólido" }, melt: 449.51, boil: 988, discovered: 1782, discoverer: "Franz-Joseph Müller", desc: { en: "Rare metalloid used in solar panels and rewritable optical discs.", es: "Metaloide raro usado en paneles solares y discos ópticos regrabables." } },
+  { n: 53, s: "I", name: { en: "Iodine", es: "Yodo" }, mass: 126.90, cat: "halogen", row: 5, col: 17, config: "[Kr] 4d¹⁰ 5s² 5p⁵", phase: { en: "Solid", es: "Sólido" }, melt: 113.7, boil: 184.3, discovered: 1811, discoverer: "Bernard Courtois", desc: { en: "Essential for thyroid function. Used as antiseptic and in photography.", es: "Esencial para la función tiroidea. Usado como antiséptico y en fotografía." } },
+  { n: 54, s: "Xe", name: { en: "Xenon", es: "Xenón" }, mass: 131.29, cat: "noble", row: 5, col: 18, config: "[Kr] 4d¹⁰ 5s² 5p⁶", phase: { en: "Gas", es: "Gas" }, melt: -111.75, boil: -108.10, discovered: 1898, discoverer: "William Ramsay", desc: { en: "Used in high-intensity arc lamps, ion thrusters, and anesthesia.", es: "Usado en lámparas de arco de alta intensidad, propulsores iónicos y anestesia." } },
+  { n: 55, s: "Cs", name: { en: "Cesium", es: "Cesio" }, mass: 132.91, cat: "alkali", row: 6, col: 1, config: "[Xe] 6s¹", phase: { en: "Solid", es: "Sólido" }, melt: 28.44, boil: 671, discovered: 1860, discoverer: "Robert Bunsen", desc: { en: "Used to define the second in atomic clocks. Most reactive metal.", es: "Usado para definir el segundo en relojes atómicos. Metal más reactivo." } },
+  { n: 56, s: "Ba", name: { en: "Barium", es: "Bario" }, mass: 137.33, cat: "alkaline", row: 6, col: 2, config: "[Xe] 6s²", phase: { en: "Solid", es: "Sólido" }, melt: 727, boil: 1845, discovered: 1808, discoverer: "Humphry Davy", desc: { en: "Used in medical X-ray imaging and green fireworks.", es: "Usado en imágenes médicas de rayos X y fuegos artificiales verdes." } },
+  { n: 57, s: "La", name: { en: "Lanthanum", es: "Lantano" }, mass: 138.91, cat: "lanthanide", row: 9, col: 4, config: "[Xe] 5d¹ 6s²", phase: { en: "Solid", es: "Sólido" }, melt: 920, boil: 3464, discovered: 1839, discoverer: "Carl Gustaf Mosander", desc: { en: "First lanthanide. Used in camera lenses and rechargeable batteries.", es: "Primer lantánido. Usado en lentes de cámaras y baterías recargables." } },
+  { n: 58, s: "Ce", name: { en: "Cerium", es: "Cerio" }, mass: 140.12, cat: "lanthanide", row: 9, col: 5, config: "[Xe] 4f¹ 5d¹ 6s²", phase: { en: "Solid", es: "Sólido" }, melt: 795, boil: 3443, discovered: 1803, discoverer: "Wilhelm Hisinger", desc: { en: "Most abundant rare earth. Used in catalytic converters and lighter flints.", es: "Tierra rara más abundante. Usado en convertidores catalíticos y piedras de encendedor." } },
+  { n: 59, s: "Pr", name: { en: "Praseodymium", es: "Praseodimio" }, mass: 140.91, cat: "lanthanide", row: 9, col: 6, config: "[Xe] 4f³ 6s²", phase: { en: "Solid", es: "Sólido" }, melt: 935, boil: 3520, discovered: 1885, discoverer: "Carl Auer von Welsbach", desc: { en: "Used in strong permanent magnets and aircraft engines.", es: "Usado en imanes permanentes fuertes y motores de aviones." } },
+  { n: 60, s: "Nd", name: { en: "Neodymium", es: "Neodimio" }, mass: 144.24, cat: "lanthanide", row: 9, col: 7, config: "[Xe] 4f⁴ 6s²", phase: { en: "Solid", es: "Sólido" }, melt: 1024, boil: 3074, discovered: 1885, discoverer: "Carl Auer von Welsbach", desc: { en: "Used in the world's strongest permanent magnets, found in headphones and motors.", es: "Usado en los imanes permanentes más fuertes del mundo, presentes en auriculares y motores." } },
+  { n: 61, s: "Pm", name: { en: "Promethium", es: "Prometio" }, mass: 145, cat: "lanthanide", row: 9, col: 8, config: "[Xe] 4f⁵ 6s²", phase: { en: "Solid", es: "Sólido" }, melt: 1042, boil: 3000, discovered: 1945, discoverer: "Charles D. Coryell", desc: { en: "Only radioactive lanthanide. Used in nuclear batteries for spacecraft.", es: "Único lantánido radiactivo. Usado en baterías nucleares para naves espaciales." } },
+  { n: 62, s: "Sm", name: { en: "Samarium", es: "Samario" }, mass: 150.36, cat: "lanthanide", row: 9, col: 9, config: "[Xe] 4f⁶ 6s²", phase: { en: "Solid", es: "Sólido" }, melt: 1072, boil: 1794, discovered: 1879, discoverer: "Paul Émile Lecoq", desc: { en: "Used in high-temperature magnets and cancer treatments.", es: "Usado en imanes de alta temperatura y tratamientos contra el cáncer." } },
+  { n: 63, s: "Eu", name: { en: "Europium", es: "Europio" }, mass: 151.96, cat: "lanthanide", row: 9, col: 10, config: "[Xe] 4f⁷ 6s²", phase: { en: "Solid", es: "Sólido" }, melt: 822, boil: 1529, discovered: 1901, discoverer: "Eugène-Anatole Demarçay", desc: { en: "Used as red phosphor in TVs and as anti-counterfeiting marker in euro banknotes.", es: "Usado como fósforo rojo en televisores y como marcador antifalsificación en billetes de euro." } },
+  { n: 64, s: "Gd", name: { en: "Gadolinium", es: "Gadolinio" }, mass: 157.25, cat: "lanthanide", row: 9, col: 11, config: "[Xe] 4f⁷ 5d¹ 6s²", phase: { en: "Solid", es: "Sólido" }, melt: 1313, boil: 3273, discovered: 1880, discoverer: "Jean Charles Galissard", desc: { en: "Strongly magnetic. Used as MRI contrast agent and in nuclear reactors.", es: "Fuertemente magnético. Usado como agente de contraste en resonancias y en reactores nucleares." } },
+  { n: 65, s: "Tb", name: { en: "Terbium", es: "Terbio" }, mass: 158.93, cat: "lanthanide", row: 9, col: 12, config: "[Xe] 4f⁹ 6s²", phase: { en: "Solid", es: "Sólido" }, melt: 1356, boil: 3230, discovered: 1843, discoverer: "Carl Gustaf Mosander", desc: { en: "Used in green phosphors for displays and in solid-state devices.", es: "Usado en fósforos verdes para pantallas y en dispositivos de estado sólido." } },
+  { n: 66, s: "Dy", name: { en: "Dysprosium", es: "Disprosio" }, mass: 162.50, cat: "lanthanide", row: 9, col: 13, config: "[Xe] 4f¹⁰ 6s²", phase: { en: "Solid", es: "Sólido" }, melt: 1412, boil: 2567, discovered: 1886, discoverer: "Paul Émile Lecoq", desc: { en: "Used in neodymium magnets to maintain strength at high temperatures.", es: "Usado en imanes de neodimio para mantener la fuerza a altas temperaturas." } },
+  { n: 67, s: "Ho", name: { en: "Holmium", es: "Holmio" }, mass: 164.93, cat: "lanthanide", row: 9, col: 14, config: "[Xe] 4f¹¹ 6s²", phase: { en: "Solid", es: "Sólido" }, melt: 1474, boil: 2700, discovered: 1878, discoverer: "Marc Delafontaine", desc: { en: "Has the strongest magnetic field of any natural element.", es: "Tiene el campo magnético más fuerte de cualquier elemento natural." } },
+  { n: 68, s: "Er", name: { en: "Erbium", es: "Erbio" }, mass: 167.26, cat: "lanthanide", row: 9, col: 15, config: "[Xe] 4f¹² 6s²", phase: { en: "Solid", es: "Sólido" }, melt: 1529, boil: 2868, discovered: 1843, discoverer: "Carl Gustaf Mosander", desc: { en: "Used in fiber optic communications and pink-tinted glass.", es: "Usado en comunicaciones de fibra óptica y vidrio teñido de rosa." } },
+  { n: 69, s: "Tm", name: { en: "Thulium", es: "Tulio" }, mass: 168.93, cat: "lanthanide", row: 9, col: 16, config: "[Xe] 4f¹³ 6s²", phase: { en: "Solid", es: "Sólido" }, melt: 1545, boil: 1950, discovered: 1879, discoverer: "Per Teodor Cleve", desc: { en: "One of the rarest lanthanides. Used in portable X-ray devices.", es: "Uno de los lantánidos más raros. Usado en dispositivos portátiles de rayos X." } },
+  { n: 70, s: "Yb", name: { en: "Ytterbium", es: "Iterbio" }, mass: 173.05, cat: "lanthanide", row: 9, col: 17, config: "[Xe] 4f¹⁴ 6s²", phase: { en: "Solid", es: "Sólido" }, melt: 819, boil: 1196, discovered: 1878, discoverer: "Jean Charles Galissard", desc: { en: "Used in atomic clocks and certain steel alloys.", es: "Usado en relojes atómicos y ciertas aleaciones de acero." } },
+  { n: 71, s: "Lu", name: { en: "Lutetium", es: "Lutecio" }, mass: 174.97, cat: "lanthanide", row: 9, col: 18, config: "[Xe] 4f¹⁴ 5d¹ 6s²", phase: { en: "Solid", es: "Sólido" }, melt: 1663, boil: 3402, discovered: 1907, discoverer: "Georges Urbain", desc: { en: "Hardest and densest lanthanide. Used in petroleum refining catalysts.", es: "Lantánido más duro y denso. Usado en catalizadores de refinación de petróleo." } },
+  { n: 72, s: "Hf", name: { en: "Hafnium", es: "Hafnio" }, mass: 178.49, cat: "transition", row: 6, col: 4, config: "[Xe] 4f¹⁴ 5d² 6s²", phase: { en: "Solid", es: "Sólido" }, melt: 2233, boil: 4603, discovered: 1923, discoverer: "Dirk Coster", desc: { en: "Used in nuclear reactor control rods due to neutron absorption.", es: "Usado en barras de control de reactores nucleares por su absorción de neutrones." } },
+  { n: 73, s: "Ta", name: { en: "Tantalum", es: "Tantalio" }, mass: 180.95, cat: "transition", row: 6, col: 5, config: "[Xe] 4f¹⁴ 5d³ 6s²", phase: { en: "Solid", es: "Sólido" }, melt: 3017, boil: 5458, discovered: 1802, discoverer: "Anders Gustaf Ekeberg", desc: { en: "Highly corrosion-resistant. Essential in capacitors for phones and electronics.", es: "Altamente resistente a la corrosión. Esencial en capacitores para teléfonos y electrónica." } },
+  { n: 74, s: "W", name: { en: "Tungsten", es: "Tungsteno" }, mass: 183.84, cat: "transition", row: 6, col: 6, config: "[Xe] 4f¹⁴ 5d⁴ 6s²", phase: { en: "Solid", es: "Sólido" }, melt: 3422, boil: 5555, discovered: 1783, discoverer: "Juan José Elhuyar", desc: { en: "Highest melting point of any metal. Used in light bulb filaments and armor-piercing rounds.", es: "Punto de fusión más alto de cualquier metal. Usado en filamentos de bombillas y munición perforante." } },
+  { n: 75, s: "Re", name: { en: "Rhenium", es: "Renio" }, mass: 186.21, cat: "transition", row: 6, col: 7, config: "[Xe] 4f¹⁴ 5d⁵ 6s²", phase: { en: "Solid", es: "Sólido" }, melt: 3186, boil: 5596, discovered: 1925, discoverer: "Walter Noddack", desc: { en: "One of the rarest elements. Used in jet engine alloys.", es: "Uno de los elementos más raros. Usado en aleaciones de motores a reacción." } },
+  { n: 76, s: "Os", name: { en: "Osmium", es: "Osmio" }, mass: 190.23, cat: "transition", row: 6, col: 8, config: "[Xe] 4f¹⁴ 5d⁶ 6s²", phase: { en: "Solid", es: "Sólido" }, melt: 3033, boil: 5012, discovered: 1803, discoverer: "Smithson Tennant", desc: { en: "Densest naturally occurring element. Used in fountain pen tips.", es: "Elemento natural más denso. Usado en puntas de plumas estilográficas." } },
+  { n: 77, s: "Ir", name: { en: "Iridium", es: "Iridio" }, mass: 192.22, cat: "transition", row: 6, col: 9, config: "[Xe] 4f¹⁴ 5d⁷ 6s²", phase: { en: "Solid", es: "Sólido" }, melt: 2466, boil: 4428, discovered: 1803, discoverer: "Smithson Tennant", desc: { en: "Most corrosion-resistant metal. The K-T extinction layer is rich in iridium.", es: "Metal más resistente a la corrosión. La capa de extinción K-T es rica en iridio." } },
+  { n: 78, s: "Pt", name: { en: "Platinum", es: "Platino" }, mass: 195.08, cat: "transition", row: 6, col: 10, config: "[Xe] 4f¹⁴ 5d⁹ 6s¹", phase: { en: "Solid", es: "Sólido" }, melt: 1768.3, boil: 3825, discovered: 1735, discoverer: "Antonio de Ulloa", desc: { en: "Precious metal used in jewelry, catalytic converters, and chemotherapy drugs.", es: "Metal precioso usado en joyería, convertidores catalíticos y fármacos de quimioterapia." } },
+  { n: 79, s: "Au", name: { en: "Gold", es: "Oro" }, mass: 196.97, cat: "transition", row: 6, col: 11, config: "[Xe] 4f¹⁴ 5d¹⁰ 6s¹", phase: { en: "Solid", es: "Sólido" }, melt: 1064.18, boil: 2856, discovered: -6000, discoverer: "Ancient", desc: { en: "Highly malleable, lustrous, and corrosion-resistant. Symbol of wealth for millennia.", es: "Altamente maleable, lustroso y resistente a la corrosión. Símbolo de riqueza durante milenios." } },
+  { n: 80, s: "Hg", name: { en: "Mercury", es: "Mercurio" }, mass: 200.59, cat: "transition", row: 6, col: 12, config: "[Xe] 4f¹⁴ 5d¹⁰ 6s²", phase: { en: "Liquid", es: "Líquido" }, melt: -38.83, boil: 356.73, discovered: -1500, discoverer: "Ancient", desc: { en: "Only metal liquid at room temperature. Highly toxic; used in old thermometers.", es: "Único metal líquido a temperatura ambiente. Altamente tóxico; usado en termómetros antiguos." } },
+  { n: 81, s: "Tl", name: { en: "Thallium", es: "Talio" }, mass: 204.38, cat: "post-transition", row: 6, col: 13, config: "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p¹", phase: { en: "Solid", es: "Sólido" }, melt: 304, boil: 1473, discovered: 1861, discoverer: "William Crookes", desc: { en: "Highly toxic. Once used as rat poison; now in electronics and infrared optics.", es: "Altamente tóxico. Antes usado como veneno para ratas; ahora en electrónica y óptica infrarroja." } },
+  { n: 82, s: "Pb", name: { en: "Lead", es: "Plomo" }, mass: 207.2, cat: "post-transition", row: 6, col: 14, config: "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p²", phase: { en: "Solid", es: "Sólido" }, melt: 327.46, boil: 1749, discovered: -7000, discoverer: "Ancient", desc: { en: "Dense, soft, toxic metal. Used in batteries, radiation shielding, and once in pipes.", es: "Metal denso, blando y tóxico. Usado en baterías, blindaje contra radiación y antes en tuberías." } },
+  { n: 83, s: "Bi", name: { en: "Bismuth", es: "Bismuto" }, mass: 208.98, cat: "post-transition", row: 6, col: 15, config: "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p³", phase: { en: "Solid", es: "Sólido" }, melt: 271.4, boil: 1564, discovered: 1753, discoverer: "Claude François Geoffroy", desc: { en: "Forms beautiful iridescent crystals. Used in Pepto-Bismol and lead-free solders.", es: "Forma hermosos cristales iridiscentes. Usado en Pepto-Bismol y soldaduras sin plomo." } },
+  { n: 84, s: "Po", name: { en: "Polonium", es: "Polonio" }, mass: 209, cat: "post-transition", row: 6, col: 16, config: "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁴", phase: { en: "Solid", es: "Sólido" }, melt: 254, boil: 962, discovered: 1898, discoverer: "Marie & Pierre Curie", desc: { en: "Highly radioactive. Discovered by Marie Curie and named after Poland.", es: "Altamente radiactivo. Descubierto por Marie Curie y nombrado en honor a Polonia." } },
+  { n: 85, s: "At", name: { en: "Astatine", es: "Astato" }, mass: 210, cat: "halogen", row: 6, col: 17, config: "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁵", phase: { en: "Solid", es: "Sólido" }, melt: 302, boil: 337, discovered: 1940, discoverer: "Dale R. Corson", desc: { en: "Rarest naturally occurring element. Less than 30g exists on Earth at any time.", es: "Elemento natural más raro. Existen menos de 30g en la Tierra en cualquier momento." } },
+  { n: 86, s: "Rn", name: { en: "Radon", es: "Radón" }, mass: 222, cat: "noble", row: 6, col: 18, config: "[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁶", phase: { en: "Gas", es: "Gas" }, melt: -71, boil: -61.7, discovered: 1900, discoverer: "Friedrich Ernst Dorn", desc: { en: "Radioactive noble gas. Major cause of lung cancer when accumulated in homes.", es: "Gas noble radiactivo. Causa importante de cáncer de pulmón cuando se acumula en hogares." } },
+  { n: 87, s: "Fr", name: { en: "Francium", es: "Francio" }, mass: 223, cat: "alkali", row: 7, col: 1, config: "[Rn] 7s¹", phase: { en: "Solid", es: "Sólido" }, melt: 27, boil: 677, discovered: 1939, discoverer: "Marguerite Perey", desc: { en: "Second rarest natural element. Extremely radioactive with very short half-life.", es: "Segundo elemento natural más raro. Extremadamente radiactivo con vida media muy corta." } },
+  { n: 88, s: "Ra", name: { en: "Radium", es: "Radio" }, mass: 226, cat: "alkaline", row: 7, col: 2, config: "[Rn] 7s²", phase: { en: "Solid", es: "Sólido" }, melt: 700, boil: 1737, discovered: 1898, discoverer: "Marie & Pierre Curie", desc: { en: "Glows blue-green. Once used in watch dials before its dangers were known.", es: "Brilla azul-verdoso. Antes usado en esferas de relojes antes de conocerse sus peligros." } },
+  { n: 89, s: "Ac", name: { en: "Actinium", es: "Actinio" }, mass: 227, cat: "actinide", row: 10, col: 4, config: "[Rn] 6d¹ 7s²", phase: { en: "Solid", es: "Sólido" }, melt: 1050, boil: 3200, discovered: 1899, discoverer: "André-Louis Debierne", desc: { en: "Glows pale blue in the dark. Used in targeted alpha therapy for cancer.", es: "Brilla azul pálido en la oscuridad. Usado en terapia alfa dirigida contra el cáncer." } },
+  { n: 90, s: "Th", name: { en: "Thorium", es: "Torio" }, mass: 232.04, cat: "actinide", row: 10, col: 5, config: "[Rn] 6d² 7s²", phase: { en: "Solid", es: "Sólido" }, melt: 1750, boil: 4788, discovered: 1828, discoverer: "Jöns Jacob Berzelius", desc: { en: "Potential nuclear fuel of the future. Named after Thor, the Norse god.", es: "Potencial combustible nuclear del futuro. Nombrado en honor a Thor, el dios nórdico." } },
+  { n: 91, s: "Pa", name: { en: "Protactinium", es: "Protactinio" }, mass: 231.04, cat: "actinide", row: 10, col: 6, config: "[Rn] 5f² 6d¹ 7s²", phase: { en: "Solid", es: "Sólido" }, melt: 1572, boil: 4000, discovered: 1913, discoverer: "Kazimierz Fajans", desc: { en: "One of the rarest and most expensive natural elements.", es: "Uno de los elementos naturales más raros y caros." } },
+  { n: 92, s: "U", name: { en: "Uranium", es: "Uranio" }, mass: 238.03, cat: "actinide", row: 10, col: 7, config: "[Rn] 5f³ 6d¹ 7s²", phase: { en: "Solid", es: "Sólido" }, melt: 1132.2, boil: 4131, discovered: 1789, discoverer: "Martin Heinrich Klaproth", desc: { en: "Primary nuclear fuel. Powers reactors and atomic weapons.", es: "Combustible nuclear principal. Alimenta reactores y armas atómicas." } },
+  { n: 93, s: "Np", name: { en: "Neptunium", es: "Neptunio" }, mass: 237, cat: "actinide", row: 10, col: 8, config: "[Rn] 5f⁴ 6d¹ 7s²", phase: { en: "Solid", es: "Sólido" }, melt: 644, boil: 3902, discovered: 1940, discoverer: "Edwin McMillan", desc: { en: "First synthetic transuranium element. Named after the planet Neptune.", es: "Primer elemento transuránico sintético. Nombrado por el planeta Neptuno." } },
+  { n: 94, s: "Pu", name: { en: "Plutonium", es: "Plutonio" }, mass: 244, cat: "actinide", row: 10, col: 9, config: "[Rn] 5f⁶ 7s²", phase: { en: "Solid", es: "Sólido" }, melt: 639.4, boil: 3228, discovered: 1940, discoverer: "Glenn T. Seaborg", desc: { en: "Used in nuclear weapons and as fuel in some reactors. Very toxic.", es: "Usado en armas nucleares y como combustible en algunos reactores. Muy tóxico." } },
+  { n: 95, s: "Am", name: { en: "Americium", es: "Americio" }, mass: 243, cat: "actinide", row: 10, col: 10, config: "[Rn] 5f⁷ 7s²", phase: { en: "Solid", es: "Sólido" }, melt: 1176, boil: 2011, discovered: 1944, discoverer: "Glenn T. Seaborg", desc: { en: "Found in household smoke detectors. Synthesized during the Manhattan Project.", es: "Se encuentra en detectores de humo domésticos. Sintetizado durante el Proyecto Manhattan." } },
+  { n: 96, s: "Cm", name: { en: "Curium", es: "Curio" }, mass: 247, cat: "actinide", row: 10, col: 11, config: "[Rn] 5f⁷ 6d¹ 7s²", phase: { en: "Solid", es: "Sólido" }, melt: 1345, boil: 3100, discovered: 1944, discoverer: "Glenn T. Seaborg", desc: { en: "Named after Marie and Pierre Curie. Used in pacemakers and Mars rovers.", es: "Nombrado en honor a Marie y Pierre Curie. Usado en marcapasos y rovers marcianos." } },
+  { n: 97, s: "Bk", name: { en: "Berkelium", es: "Berkelio" }, mass: 247, cat: "actinide", row: 10, col: 12, config: "[Rn] 5f⁹ 7s²", phase: { en: "Solid", es: "Sólido" }, melt: 986, boil: 2627, discovered: 1949, discoverer: "Glenn T. Seaborg", desc: { en: "Named after Berkeley, California where it was discovered.", es: "Nombrado por Berkeley, California, donde fue descubierto." } },
+  { n: 98, s: "Cf", name: { en: "Californium", es: "Californio" }, mass: 251, cat: "actinide", row: 10, col: 13, config: "[Rn] 5f¹⁰ 7s²", phase: { en: "Solid", es: "Sólido" }, melt: 900, boil: 1470, discovered: 1950, discoverer: "Glenn T. Seaborg", desc: { en: "Powerful neutron emitter. Used to start nuclear reactors and find oil.", es: "Potente emisor de neutrones. Usado para iniciar reactores nucleares y encontrar petróleo." } },
+  { n: 99, s: "Es", name: { en: "Einsteinium", es: "Einstenio" }, mass: 252, cat: "actinide", row: 10, col: 14, config: "[Rn] 5f¹¹ 7s²", phase: { en: "Solid", es: "Sólido" }, melt: 860, boil: 996, discovered: 1952, discoverer: "Albert Ghiorso", desc: { en: "Named after Albert Einstein. Discovered in fallout from first H-bomb test.", es: "Nombrado en honor a Albert Einstein. Descubierto en la lluvia radiactiva de la primera bomba H." } },
+  { n: 100, s: "Fm", name: { en: "Fermium", es: "Fermio" }, mass: 257, cat: "actinide", row: 10, col: 15, config: "[Rn] 5f¹² 7s²", phase: { en: "Solid", es: "Sólido" }, melt: 1527, boil: null, discovered: 1952, discoverer: "Albert Ghiorso", desc: { en: "Heaviest element formed by neutron bombardment. Named after Enrico Fermi.", es: "Elemento más pesado formado por bombardeo de neutrones. Nombrado por Enrico Fermi." } },
+  { n: 101, s: "Md", name: { en: "Mendelevium", es: "Mendelevio" }, mass: 258, cat: "actinide", row: 10, col: 16, config: "[Rn] 5f¹³ 7s²", phase: { en: "Solid", es: "Sólido" }, melt: 827, boil: null, discovered: 1955, discoverer: "Albert Ghiorso", desc: { en: "Named after Dmitri Mendeleev, creator of the periodic table.", es: "Nombrado en honor a Dmitri Mendeléyev, creador de la tabla periódica." } },
+  { n: 102, s: "No", name: { en: "Nobelium", es: "Nobelio" }, mass: 259, cat: "actinide", row: 10, col: 17, config: "[Rn] 5f¹⁴ 7s²", phase: { en: "Solid", es: "Sólido" }, melt: 827, boil: null, discovered: 1966, discoverer: "Georgy Flyorov", desc: { en: "Named after Alfred Nobel, founder of the Nobel Prize.", es: "Nombrado en honor a Alfred Nobel, fundador del Premio Nobel." } },
+  { n: 103, s: "Lr", name: { en: "Lawrencium", es: "Lawrencio" }, mass: 266, cat: "actinide", row: 10, col: 18, config: "[Rn] 5f¹⁴ 7s² 7p¹", phase: { en: "Solid", es: "Sólido" }, melt: 1627, boil: null, discovered: 1961, discoverer: "Albert Ghiorso", desc: { en: "Last actinide. Named after Ernest Lawrence, inventor of the cyclotron.", es: "Último actínido. Nombrado por Ernest Lawrence, inventor del ciclotrón." } },
+  { n: 104, s: "Rf", name: { en: "Rutherfordium", es: "Rutherfordio" }, mass: 267, cat: "transition", row: 7, col: 4, config: "[Rn] 5f¹⁴ 6d² 7s²", phase: { en: "Solid", es: "Sólido" }, melt: null, boil: null, discovered: 1964, discoverer: "JINR & LBNL", desc: { en: "First transactinide element. Named after Ernest Rutherford.", es: "Primer elemento transactínido. Nombrado en honor a Ernest Rutherford." } },
+  { n: 105, s: "Db", name: { en: "Dubnium", es: "Dubnio" }, mass: 268, cat: "transition", row: 7, col: 5, config: "[Rn] 5f¹⁴ 6d³ 7s²", phase: { en: "Solid", es: "Sólido" }, melt: null, boil: null, discovered: 1968, discoverer: "JINR & LBNL", desc: { en: "Named after Dubna, Russia, home of the Joint Institute for Nuclear Research.", es: "Nombrado por Dubna, Rusia, sede del Instituto Conjunto de Investigación Nuclear." } },
+  { n: 106, s: "Sg", name: { en: "Seaborgium", es: "Seaborgio" }, mass: 269, cat: "transition", row: 7, col: 6, config: "[Rn] 5f¹⁴ 6d⁴ 7s²", phase: { en: "Solid", es: "Sólido" }, melt: null, boil: null, discovered: 1974, discoverer: "Albert Ghiorso", desc: { en: "Named after Glenn T. Seaborg, while he was still alive.", es: "Nombrado en honor a Glenn T. Seaborg, mientras aún vivía." } },
+  { n: 107, s: "Bh", name: { en: "Bohrium", es: "Bohrio" }, mass: 270, cat: "transition", row: 7, col: 7, config: "[Rn] 5f¹⁴ 6d⁵ 7s²", phase: { en: "Solid", es: "Sólido" }, melt: null, boil: null, discovered: 1981, discoverer: "Peter Armbruster", desc: { en: "Named after Niels Bohr, Danish physicist of quantum theory.", es: "Nombrado en honor a Niels Bohr, físico danés de la teoría cuántica." } },
+  { n: 108, s: "Hs", name: { en: "Hassium", es: "Hasio" }, mass: 269, cat: "transition", row: 7, col: 8, config: "[Rn] 5f¹⁴ 6d⁶ 7s²", phase: { en: "Solid", es: "Sólido" }, melt: null, boil: null, discovered: 1984, discoverer: "Peter Armbruster", desc: { en: "Named after Hesse, Germany. Extremely short half-life.", es: "Nombrado por Hesse, Alemania. Vida media extremadamente corta." } },
+  { n: 109, s: "Mt", name: { en: "Meitnerium", es: "Meitnerio" }, mass: 278, cat: "transition", row: 7, col: 9, config: "[Rn] 5f¹⁴ 6d⁷ 7s²", phase: { en: "Solid", es: "Sólido" }, melt: null, boil: null, discovered: 1982, discoverer: "Peter Armbruster", desc: { en: "Named after Lise Meitner, who co-discovered nuclear fission.", es: "Nombrado en honor a Lise Meitner, quien codescubrió la fisión nuclear." } },
+  { n: 110, s: "Ds", name: { en: "Darmstadtium", es: "Darmstadtio" }, mass: 281, cat: "transition", row: 7, col: 10, config: "[Rn] 5f¹⁴ 6d⁸ 7s²", phase: { en: "Solid", es: "Sólido" }, melt: null, boil: null, discovered: 1994, discoverer: "Peter Armbruster", desc: { en: "Named after Darmstadt, Germany, where it was synthesized.", es: "Nombrado por Darmstadt, Alemania, donde fue sintetizado." } },
+  { n: 111, s: "Rg", name: { en: "Roentgenium", es: "Roentgenio" }, mass: 282, cat: "transition", row: 7, col: 11, config: "[Rn] 5f¹⁴ 6d⁹ 7s²", phase: { en: "Solid", es: "Sólido" }, melt: null, boil: null, discovered: 1994, discoverer: "Peter Armbruster", desc: { en: "Named after Wilhelm Röntgen, who discovered X-rays.", es: "Nombrado en honor a Wilhelm Röntgen, quien descubrió los rayos X." } },
+  { n: 112, s: "Cn", name: { en: "Copernicium", es: "Copernicio" }, mass: 285, cat: "transition", row: 7, col: 12, config: "[Rn] 5f¹⁴ 6d¹⁰ 7s²", phase: { en: "Gas", es: "Gas" }, melt: null, boil: null, discovered: 1996, discoverer: "Sigurd Hofmann", desc: { en: "Named after astronomer Nicolaus Copernicus. Predicted to be a gas.", es: "Nombrado en honor al astrónomo Nicolás Copérnico. Se predice que es un gas." } },
+  { n: 113, s: "Nh", name: { en: "Nihonium", es: "Nihonio" }, mass: 286, cat: "post-transition", row: 7, col: 13, config: "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p¹", phase: { en: "Solid", es: "Sólido" }, melt: null, boil: null, discovered: 2003, discoverer: "RIKEN", desc: { en: "First element discovered in Asia. Nihon means 'Japan' in Japanese.", es: "Primer elemento descubierto en Asia. Nihon significa 'Japón' en japonés." } },
+  { n: 114, s: "Fl", name: { en: "Flerovium", es: "Flerovio" }, mass: 289, cat: "post-transition", row: 7, col: 14, config: "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p²", phase: { en: "Solid", es: "Sólido" }, melt: null, boil: null, discovered: 1998, discoverer: "JINR", desc: { en: "Named after Georgy Flyorov, Soviet nuclear physicist.", es: "Nombrado en honor a Georgy Flyorov, físico nuclear soviético." } },
+  { n: 115, s: "Mc", name: { en: "Moscovium", es: "Moscovio" }, mass: 289, cat: "post-transition", row: 7, col: 15, config: "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p³", phase: { en: "Solid", es: "Sólido" }, melt: null, boil: null, discovered: 2003, discoverer: "JINR & LLNL", desc: { en: "Named after Moscow Oblast, where Dubna is located.", es: "Nombrado por el Óblast de Moscú, donde se ubica Dubna." } },
+  { n: 116, s: "Lv", name: { en: "Livermorium", es: "Livermorio" }, mass: 293, cat: "post-transition", row: 7, col: 16, config: "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁴", phase: { en: "Solid", es: "Sólido" }, melt: null, boil: null, discovered: 2000, discoverer: "JINR & LLNL", desc: { en: "Named after Lawrence Livermore National Laboratory in California.", es: "Nombrado por el Laboratorio Nacional Lawrence Livermore en California." } },
+  { n: 117, s: "Ts", name: { en: "Tennessine", es: "Teneso" }, mass: 294, cat: "halogen", row: 7, col: 17, config: "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁵", phase: { en: "Solid", es: "Sólido" }, melt: null, boil: null, discovered: 2010, discoverer: "JINR & ORNL", desc: { en: "Named after Tennessee. Second-heaviest known element.", es: "Nombrado por Tennessee. Segundo elemento conocido más pesado." } },
+  { n: 118, s: "Og", name: { en: "Oganesson", es: "Oganesón" }, mass: 294, cat: "noble", row: 7, col: 18, config: "[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁶", phase: { en: "Gas", es: "Gas" }, melt: null, boil: null, discovered: 2002, discoverer: "Yuri Oganessian", desc: { en: "Heaviest known element. Named after Yuri Oganessian, who is still alive.", es: "Elemento conocido más pesado. Nombrado en honor a Yuri Oganessian, quien aún vive." } }
+];
+
+const CATEGORIES = {
+  alkali: { label: { en: "Alkali metals", es: "Metales alcalinos" }, color: "#ef4444", bg: "rgba(239,68,68,0.15)", border: "rgba(239,68,68,0.5)" },
+  alkaline: { label: { en: "Alkaline earth", es: "Alcalinotérreos" }, color: "#f97316", bg: "rgba(249,115,22,0.15)", border: "rgba(249,115,22,0.5)" },
+  transition: { label: { en: "Transition metals", es: "Metales de transición" }, color: "#eab308", bg: "rgba(234,179,8,0.15)", border: "rgba(234,179,8,0.5)" },
+  "post-transition": { label: { en: "Post-transition", es: "Post-transición" }, color: "#84cc16", bg: "rgba(132,204,22,0.15)", border: "rgba(132,204,22,0.5)" },
+  metalloid: { label: { en: "Metalloids", es: "Metaloides" }, color: "#14b8a6", bg: "rgba(20,184,166,0.15)", border: "rgba(20,184,166,0.5)" },
+  nonmetal: { label: { en: "Nonmetals", es: "No metales" }, color: "#06b6d4", bg: "rgba(6,182,212,0.15)", border: "rgba(6,182,212,0.5)" },
+  halogen: { label: { en: "Halogens", es: "Halógenos" }, color: "#3b82f6", bg: "rgba(59,130,246,0.15)", border: "rgba(59,130,246,0.5)" },
+  noble: { label: { en: "Noble gases", es: "Gases nobles" }, color: "#8b5cf6", bg: "rgba(139,92,246,0.15)", border: "rgba(139,92,246,0.5)" },
+  lanthanide: { label: { en: "Lanthanides", es: "Lantánidos" }, color: "#ec4899", bg: "rgba(236,72,153,0.15)", border: "rgba(236,72,153,0.5)" },
+  actinide: { label: { en: "Actinides", es: "Actínidos" }, color: "#f43f5e", bg: "rgba(244,63,94,0.15)", border: "rgba(244,63,94,0.5)" }
+};
+
+const T = {
+  en: {
+    title: "Interactive Periodic Table",
+    subtitle: "Hover for quick info · Click to pin · 118 elements",
+    search: "Search by name, symbol, or number…",
+    clearFilter: "Clear filter ×",
+    placeholder: "Hover over an element to see details, or click to pin it",
+    atomicMass: "Atomic mass",
+    phase: "Phase (STP)",
+    melting: "Melting",
+    boiling: "Boiling",
+    config: "Configuration",
+    discovered: "Discovered",
+    discoverer: "Discoverer",
+    unknown: "Unknown",
+    bce: "BCE",
+    language: "Language"
+  },
+  es: {
+    title: "Tabla Periódica Interactiva",
+    subtitle: "Pasa el mouse para info rápida · Clic para fijar · 118 elementos",
+    search: "Buscar por nombre, símbolo o número…",
+    clearFilter: "Quitar filtro ×",
+    placeholder: "Pasa el mouse sobre un elemento para ver detalles, o haz clic para fijarlo",
+    atomicMass: "Masa atómica",
+    phase: "Fase (CNTP)",
+    melting: "Fusión",
+    boiling: "Ebullición",
+    config: "Configuración",
+    discovered: "Descubierto",
+    discoverer: "Descubridor",
+    unknown: "Desconocido",
+    bce: "a.C.",
+    language: "Idioma"
+  }
+};
+
+export default function PeriodicTable() {
+  const [selected, setSelected] = useState(null);
+  const [hovered, setHovered] = useState(null);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState(null);
+  const [lang, setLang] = useState("es");
+
+  const t = T[lang];
+
+  const matches = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q && !filter) return null;
+    const set = new Set();
+    ELEMENTS.forEach(e => {
+      const matchesSearch = !q ||
+        e.name.en.toLowerCase().includes(q) ||
+        e.name.es.toLowerCase().includes(q) ||
+        e.s.toLowerCase() === q ||
+        String(e.n) === q;
+      const matchesFilter = !filter || e.cat === filter;
+      if (matchesSearch && matchesFilter) set.add(e.n);
+    });
+    return set;
+  }, [search, filter]);
+
+  const display = hovered || selected;
+
+  return (
+    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0a0e1a 0%, #1a1033 100%)", padding: "24px", fontFamily: "ui-sans-serif, system-ui, -apple-system, sans-serif", color: "#e4e4e7" }}>
+      <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
+        <header style={{ marginBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "12px" }}>
+          <div>
+            <h1 style={{ fontSize: "32px", fontWeight: "700", margin: "0 0 6px 0", background: "linear-gradient(90deg, #60a5fa, #c084fc, #f472b6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+              {t.title}
+            </h1>
+            <p style={{ margin: 0, color: "#94a3b8", fontSize: "14px" }}>
+              {t.subtitle}
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: "4px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "3px" }}>
+            {["es", "en"].map(code => (
+              <button
+                key={code}
+                onClick={() => setLang(code)}
+                style={{
+                  padding: "6px 14px",
+                  background: lang === code ? "rgba(96,165,250,0.2)" : "transparent",
+                  border: lang === code ? "1px solid rgba(96,165,250,0.4)" : "1px solid transparent",
+                  borderRadius: "6px",
+                  color: lang === code ? "#fff" : "#94a3b8",
+                  fontSize: "13px",
+                  fontWeight: lang === code ? "600" : "400",
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                  fontFamily: "inherit"
+                }}
+              >
+                {code === "es" ? "🇪🇸 ES" : "🇬🇧 EN"}
+              </button>
+            ))}
+          </div>
+        </header>
+
+        <div style={{ display: "flex", gap: "12px", marginBottom: "16px", flexWrap: "wrap", alignItems: "center" }}>
+          <input
+            type="text"
+            placeholder={t.search}
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{
+              padding: "8px 14px",
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: "8px",
+              color: "#e4e4e7",
+              fontSize: "14px",
+              outline: "none",
+              minWidth: "260px",
+              flex: "0 1 320px",
+              fontFamily: "inherit"
+            }}
+          />
+          {filter && (
+            <button
+              onClick={() => setFilter(null)}
+              style={{
+                padding: "8px 14px",
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.15)",
+                borderRadius: "8px",
+                color: "#e4e4e7",
+                fontSize: "13px",
+                cursor: "pointer",
+                fontFamily: "inherit"
+              }}
+            >
+              {t.clearFilter}
+            </button>
+          )}
+        </div>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "20px" }}>
+          {Object.entries(CATEGORIES).map(([key, cat]) => (
+            <button
+              key={key}
+              onClick={() => setFilter(filter === key ? null : key)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "5px 10px",
+                background: filter === key ? cat.bg : "rgba(255,255,255,0.04)",
+                border: `1px solid ${filter === key ? cat.border : "rgba(255,255,255,0.08)"}`,
+                borderRadius: "6px",
+                color: "#e4e4e7",
+                fontSize: "12px",
+                cursor: "pointer",
+                transition: "all 0.15s",
+                fontFamily: "inherit"
+              }}
+            >
+              <span style={{ width: "10px", height: "10px", borderRadius: "2px", background: cat.color }} />
+              {cat.label[lang]}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(18, minmax(0, 1fr))", gap: "3px", marginBottom: "8px" }}>
+          {ELEMENTS.map(el => {
+            const cat = CATEGORIES[el.cat];
+            const isMatch = !matches || matches.has(el.n);
+            const isSelected = selected?.n === el.n;
+            return (
+              <button
+                key={el.n}
+                onMouseEnter={() => setHovered(el)}
+                onMouseLeave={() => setHovered(null)}
+                onClick={() => setSelected(isSelected ? null : el)}
+                style={{
+                  gridColumn: el.col,
+                  gridRow: el.row,
+                  aspectRatio: "1",
+                  background: isMatch ? cat.bg : "rgba(255,255,255,0.02)",
+                  border: `1px solid ${isSelected ? cat.color : isMatch ? cat.border : "rgba(255,255,255,0.05)"}`,
+                  borderRadius: "4px",
+                  padding: "2px",
+                  color: isMatch ? "#fff" : "#52525b",
+                  cursor: "pointer",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  gap: "1px",
+                  fontFamily: "inherit",
+                  transition: "transform 0.1s, box-shadow 0.1s, background 0.15s",
+                  transform: isSelected ? "scale(1.1)" : "scale(1)",
+                  boxShadow: isSelected ? `0 0 16px ${cat.color}` : "none",
+                  opacity: isMatch ? 1 : 0.3,
+                  position: "relative",
+                  zIndex: isSelected ? 5 : 1
+                }}
+                onMouseOver={e => { if (isMatch && !isSelected) e.currentTarget.style.transform = "scale(1.08)"; }}
+                onMouseOut={e => { if (!isSelected) e.currentTarget.style.transform = "scale(1)"; }}
+              >
+                <div style={{ fontSize: "8px", opacity: 0.7, lineHeight: 1 }}>{el.n}</div>
+                <div style={{ fontSize: "16px", fontWeight: "700", lineHeight: 1 }}>{el.s}</div>
+                <div style={{ fontSize: "7px", opacity: 0.7, lineHeight: 1, textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%", whiteSpace: "nowrap" }}>{el.name[lang]}</div>
+              </button>
+            );
+          })}
+
+          <div style={{ gridColumn: "3", gridRow: "9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", color: "#71717a" }}>57-71</div>
+          <div style={{ gridColumn: "3", gridRow: "10", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", color: "#71717a" }}>89-103</div>
+        </div>
+
+        <div style={{
+          marginTop: "24px",
+          minHeight: "180px",
+          padding: "20px",
+          background: display ? `linear-gradient(135deg, ${CATEGORIES[display.cat].bg}, rgba(255,255,255,0.02))` : "rgba(255,255,255,0.03)",
+          border: `1px solid ${display ? CATEGORIES[display.cat].border : "rgba(255,255,255,0.08)"}`,
+          borderRadius: "12px",
+          transition: "all 0.2s"
+        }}>
+          {display ? (
+            <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "24px", alignItems: "start" }}>
+              <div style={{
+                width: "120px",
+                height: "120px",
+                background: CATEGORIES[display.cat].bg,
+                border: `2px solid ${CATEGORIES[display.cat].color}`,
+                borderRadius: "10px",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+                gap: "4px",
+                flexShrink: 0
+              }}>
+                <div style={{ fontSize: "12px", opacity: 0.8 }}>{display.n}</div>
+                <div style={{ fontSize: "44px", fontWeight: "700", lineHeight: 1 }}>{display.s}</div>
+                <div style={{ fontSize: "11px", opacity: 0.8 }}>{display.mass}</div>
+              </div>
+              <div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: "12px", marginBottom: "10px", flexWrap: "wrap" }}>
+                  <h2 style={{ margin: 0, fontSize: "24px", fontWeight: "700", color: "#fff" }}>{display.name[lang]}</h2>
+                  <span style={{
+                    fontSize: "11px",
+                    padding: "2px 8px",
+                    background: CATEGORIES[display.cat].bg,
+                    border: `1px solid ${CATEGORIES[display.cat].border}`,
+                    borderRadius: "10px",
+                    color: CATEGORIES[display.cat].color
+                  }}>
+                    {CATEGORIES[display.cat].label[lang]}
+                  </span>
+                </div>
+                <p style={{ margin: "0 0 14px 0", fontSize: "14px", lineHeight: 1.5, color: "#cbd5e1" }}>{display.desc[lang]}</p>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "10px", fontSize: "12px" }}>
+                  <Stat label={t.atomicMass} value={`${display.mass} u`} />
+                  <Stat label={t.phase} value={display.phase[lang]} />
+                  <Stat label={t.melting} value={display.melt !== null ? `${display.melt} °C` : t.unknown} />
+                  <Stat label={t.boiling} value={display.boil !== null ? `${display.boil} °C` : t.unknown} />
+                  <Stat label={t.config} value={display.config} />
+                  <Stat label={t.discovered} value={display.discovered < 0 ? `~${Math.abs(display.discovered)} ${t.bce}` : display.discovered} />
+                  <Stat label={t.discoverer} value={display.discoverer} />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ textAlign: "center", color: "#64748b", fontSize: "14px", padding: "40px 0" }}>
+              {t.placeholder}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Stat({ label, value }) {
+  return (
+    <div style={{ background: "rgba(0,0,0,0.2)", padding: "8px 10px", borderRadius: "6px" }}>
+      <div style={{ fontSize: "10px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "2px" }}>{label}</div>
+      <div style={{ color: "#f1f5f9", fontWeight: "500" }}>{value}</div>
+    </div>
+  );
+}
